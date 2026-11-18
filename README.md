@@ -1,0 +1,2 @@
+# SimpleSight
+osint gathering tool
