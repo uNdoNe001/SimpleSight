@@ -112,6 +112,8 @@ auth and tenant isolation, and investigations persist their assets.
 | SMPLSGHT-28 Partial/failure reporting | ✅ done | `collectors/runner.py` outcome roll-up |
 | SMPLSGHT-23 DNS records collector | ✅ done | `collectors/dns_records.py` |
 | SMPLSGHT-25 Certificate transparency collector | ✅ done | crt.sh |
+| SMPLSGHT-22 WHOIS / registration collector | ✅ done | RDAP (`collectors/whois_rdap.py`) |
+| SMPLSGHT-27 Historical records collector | ✅ done | Wayback CDX (`collectors/historical_records.py`) |
 | SMPLSGHT-24 Subdomain discovery | 🟡 partial | CT-powered; add passive-DNS sources later |
 | SMPLSGHT-30 Normalize to canonical assets | ✅ done | `app/services/assets.py` |
 | SMPLSGHT-31 Deduplicate/consolidate | ✅ done | noisy-OR confidence merge |

@@ -10,6 +10,8 @@ from __future__ import annotations
 from collectors.base import Collector
 from collectors.certificate_transparency import CertificateTransparencyCollector
 from collectors.dns_records import DNSRecordsCollector
+from collectors.historical_records import HistoricalRecordsCollector
+from collectors.whois_rdap import WhoisRdapCollector
 
 
 def default_collectors() -> list[Collector]:
@@ -17,4 +19,6 @@ def default_collectors() -> list[Collector]:
     return [
         DNSRecordsCollector(),
         CertificateTransparencyCollector(),
+        WhoisRdapCollector(),
+        HistoricalRecordsCollector(),
     ]
