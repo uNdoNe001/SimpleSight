@@ -100,3 +100,31 @@ input, select, textarea {
 
 .auth-wrap { max-width: 380px; margin: 8vh auto; }
 .center { text-align: center; }
+
+/* --- findings --- */
+.badge.sev-critical { background: #fee2e2; color: #991b1b; }
+.badge.sev-high { background: #fee2e2; color: var(--danger); }
+.badge.sev-medium { background: #ffedd5; color: var(--warn); }
+.badge.sev-low { background: #fef9c3; color: #a16207; }
+.badge.sev-info { background: #e0f2fe; color: #0369a1; }
+.badge.confirmed { background: #dcfce7; color: var(--ok); }
+.badge.unverified { background: #f1f5f9; color: #475569; }
+.badge.open { background: #e0e7ff; color: #4338ca; }
+.badge.triaged { background: #dbeafe; color: #1d4ed8; }
+.badge.dismissed { background: #f1f5f9; color: #64748b; }
+
+.finding { border-left: 4px solid var(--border); }
+.finding.sev-critical, .finding.sev-high { border-left-color: var(--danger); }
+.finding.sev-medium { border-left-color: var(--warn); }
+.finding.sev-low { border-left-color: #ca8a04; }
+.finding.sev-info { border-left-color: #0ea5e9; }
+.finding.dismissed { opacity: 0.6; }
+.finding-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.finding-head .title { font-weight: 600; margin-right: auto; }
+.finding .desc { color: var(--text); font-size: 0.9rem; margin: 0.6rem 0 0.4rem; }
+.evidence { margin-top: 0.5rem; font-size: 0.82rem; }
+.evidence summary { cursor: pointer; color: var(--muted); }
+.evidence ul { margin: 0.4rem 0 0; padding-left: 1.1rem; }
+.evidence li { margin: 0.15rem 0; }
+.triage { display: flex; align-items: center; gap: 0.4rem; }
+.triage select { width: auto; padding: 0.3rem 0.5rem; font-size: 0.82rem; }

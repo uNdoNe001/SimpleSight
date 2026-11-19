@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Asset, Investigation, InvestigationStatus, Organization
 from app.services.audit import record_audit
+from app.services.findings import derive_findings, persist_findings
 from app.services.pipeline import run_investigation as run_pipeline
 
 
@@ -56,6 +57,11 @@ def run_and_persist(db: Session, investigation: Investigation, actor_user_id: st
             )
         )
 
+    # Derive findings from the fresh assets (SMPLSGHT-32/-33). Deterministic rules over the
+    # collected evidence — nothing is invented — with analyst triage preserved across re-runs.
+    candidates = derive_findings(target, result.assets)
+    persist_findings(db, investigation, candidates)
+
     investigation.status = result.overall_outcome  # success | partial | failed
     investigation.completed_at = datetime.now(UTC)
 
@@ -69,6 +75,7 @@ def run_and_persist(db: Session, investigation: Investigation, actor_user_id: st
             "target": target,
             "outcome": result.overall_outcome,
             "asset_count": result.asset_count,
+            "finding_count": len(candidates),
             "collectors": [c.model_dump() for c in result.collectors],
         },
     )

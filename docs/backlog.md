@@ -92,9 +92,11 @@ yet scheduled.
 
 ## Implementation status
 
-Two slices landed: (1) the collection-framework spine + first passive collectors, and
-(2) persistence, auth, tenancy, and the full investigation flow. The API now has real
-auth and tenant isolation, and investigations persist their assets.
+Landed so far: (1) the collection-framework spine + four passive collectors, (2)
+persistence, auth, tenancy, and the full investigation flow, (3) an async RQ job queue,
+(4) the React/TS SPA, and (5) a findings layer — a deterministic rule engine that derives
+triageable, evidence-backed findings from collected assets (nothing invented), classifies
+each as confirmed vs. unverified, and preserves analyst triage across re-runs.
 
 | Story | Status | Notes |
 |---|---|---|
@@ -117,11 +119,13 @@ auth and tenant isolation, and investigations persist their assets.
 | SMPLSGHT-24 Subdomain discovery | 🟡 partial | CT-powered; add passive-DNS sources later |
 | SMPLSGHT-30 Normalize to canonical assets | ✅ done | `app/services/assets.py` |
 | SMPLSGHT-31 Deduplicate/consolidate | ✅ done | noisy-OR confidence merge |
+| SMPLSGHT-32 Finding model | ✅ done | `Finding` + rule engine (`app/services/findings.py`), evidence envelope, triage status |
+| SMPLSGHT-33 Confirmed-vs-unverified | ✅ done | `classification` per finding; confirmed = authoritative/corroborated |
 | SMPLSGHT-34 App shell + auth UI | ✅ done | React/TS SPA, login/signup (`frontend/`) |
 | SMPLSGHT-35 Main dashboard | ✅ done | summary tiles + recent investigations |
 | SMPLSGHT-38 Investigation status in UI | ✅ done | status badges + live polling while running |
-| SMPLSGHT-36 Findings list | 🟡 partial | asset list w/ type + confidence filters; findings model pending |
-| SMPLSGHT-37 Finding detail / evidence | 🟡 partial | asset rows show sources/confidence; findings detail pending |
+| SMPLSGHT-36 Findings list | ✅ done | findings list w/ severity + dismissed filters, triage control (`FindingsSection.tsx`) |
+| SMPLSGHT-37 Finding detail / evidence | ✅ done | per-finding evidence envelope (asset refs + sources) in UI |
 | SMPLSGHT-16 Discovery-plan generation | ⬜ not started | — |
 | SMPLSGHT-11 Secrets management | ⬜ not started | env vars for now; no secrets manager |
 | SMPLSGHT-18 Job queue | ✅ done | RQ worker; `/run` returns 202, `QUEUE_EAGER` for dev |

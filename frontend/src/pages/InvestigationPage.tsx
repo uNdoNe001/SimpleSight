@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
-import type { Asset, Investigation } from "../api/types";
+import type { Asset, Finding, Investigation } from "../api/types";
 import { StatusBadge } from "../components/Layout";
+import { FindingsSection } from "../components/FindingsSection";
 import { useAuth } from "../auth/AuthContext";
 
 const TERMINAL = ["success", "complete", "partial", "failed"];
@@ -58,6 +59,7 @@ export function InvestigationPage() {
   }
 
   const assets: Asset[] = inv?.assets ?? [];
+  const findings: Finding[] = inv?.findings ?? [];
   const types = useMemo(
     () => Array.from(new Set(assets.map((a) => a.asset_type))).sort(),
     [assets],
@@ -117,6 +119,8 @@ export function InvestigationPage() {
         )}
         {inv.status === "running" && <p className="muted" style={{ marginTop: "1rem" }}>Collection running… this page updates automatically.</p>}
       </div>
+
+      <FindingsSection findings={findings} canWrite={canWrite} onChanged={load} />
 
       <h2>Discovered assets ({assets.length})</h2>
       {assets.length > 0 && (

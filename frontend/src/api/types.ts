@@ -35,6 +35,32 @@ export interface Asset {
   attributes: Record<string, unknown>;
 }
 
+export type FindingSeverity = "info" | "low" | "medium" | "high" | "critical";
+export type FindingClassification = "confirmed" | "unverified";
+export type FindingStatus = "open" | "triaged" | "dismissed";
+
+export interface FindingEvidence {
+  asset_type: string;
+  value: string;
+  confidence: number;
+  sources: string[];
+}
+
+export interface Finding {
+  id: string;
+  finding_key: string;
+  finding_type: string;
+  title: string;
+  description: string;
+  severity: FindingSeverity;
+  confidence: number;
+  classification: FindingClassification;
+  status: FindingStatus;
+  evidence: FindingEvidence[];
+  created_at: string;
+  updated_at: string;
+}
+
 export type InvestigationStatus = "draft" | "running" | "complete" | "partial" | "failed" | "success";
 
 export interface Investigation {
@@ -50,4 +76,5 @@ export interface Investigation {
   started_at: string | null;
   completed_at: string | null;
   assets?: Asset[];
+  findings?: Finding[];
 }

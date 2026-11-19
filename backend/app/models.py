@@ -38,6 +38,29 @@ class InvestigationStatus(str, Enum):
     FAILED = "failed"
 
 
+class FindingSeverity(str, Enum):
+    INFO = "info"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class FindingClassification(str, Enum):
+    """Whether a finding rests on authoritative/corroborated evidence (SMPLSGHT-33)."""
+
+    CONFIRMED = "confirmed"  # positive, authoritative or multi-source evidence
+    UNVERIFIED = "unverified"  # single passive signal or inference from absence
+
+
+class FindingStatus(str, Enum):
+    """Analyst triage state. Set by people, preserved across re-runs."""
+
+    OPEN = "open"
+    TRIAGED = "triaged"
+    DISMISSED = "dismissed"
+
+
 class Tenant(Base):
     __tablename__ = "tenants"
 
@@ -96,6 +119,9 @@ class Investigation(Base):
     assets: Mapped[list[Asset]] = relationship(
         back_populates="investigation", cascade="all, delete-orphan"
     )
+    findings: Mapped[list[Finding]] = relationship(
+        back_populates="investigation", cascade="all, delete-orphan"
+    )
 
     @property
     def is_authorized(self) -> bool:
@@ -122,6 +148,45 @@ class Asset(Base):
     last_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     investigation: Mapped[Investigation] = relationship(back_populates="assets")
+
+
+class Finding(Base):
+    """A triageable observation derived deterministically from collected assets.
+
+    Findings are produced by the rule engine in `app/services/findings.py`, never invented:
+    each one carries an `evidence` envelope pointing at the concrete assets that
+    substantiate it (SMPLSGHT-32). `classification` records whether that evidence is
+    authoritative/corroborated or a single unverified signal (SMPLSGHT-33). `finding_key`
+    is a stable identity so analyst triage (`status`) survives re-runs.
+    """
+
+    __tablename__ = "findings"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(String(36), ForeignKey("tenants.id"), index=True)
+    investigation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("investigations.id"), index=True
+    )
+    organization_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("organizations.id"), index=True
+    )
+    finding_key: Mapped[str] = mapped_column(String(255), index=True)
+    finding_type: Mapped[str] = mapped_column(String(64), index=True)
+    title: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str] = mapped_column(Text, default="")
+    severity: Mapped[str] = mapped_column(String(20), default=FindingSeverity.INFO.value)
+    confidence: Mapped[float] = mapped_column(default=0.0)
+    classification: Mapped[str] = mapped_column(
+        String(20), default=FindingClassification.UNVERIFIED.value
+    )
+    status: Mapped[str] = mapped_column(String(20), default=FindingStatus.OPEN.value)
+    evidence: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now
+    )
+
+    investigation: Mapped[Investigation] = relationship(back_populates="findings")
 
 
 class AuditLog(Base):

@@ -50,6 +50,31 @@ class RunInvestigationResponse(BaseModel):
     assets: list[AssetOut]
 
 
+# --- findings --------------------------------------------------------------------------
+
+class FindingOut(BaseModel):
+    """A triageable observation derived from assets (SMPLSGHT-32/-33)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    finding_key: str
+    finding_type: str
+    title: str
+    description: str
+    severity: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    classification: str
+    status: str
+    evidence: list[dict] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+
+
+class FindingStatusUpdate(BaseModel):
+    status: str = Field(pattern="^(open|triaged|dismissed)$")
+
+
 # --- auth ------------------------------------------------------------------------------
 
 class SignupRequest(BaseModel):
@@ -148,3 +173,4 @@ class InvestigationOut(BaseModel):
 
 class InvestigationDetailOut(InvestigationOut):
     assets: list[AssetOut] = Field(default_factory=list)
+    findings: list[FindingOut] = Field(default_factory=list)
