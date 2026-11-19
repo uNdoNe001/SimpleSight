@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api import auth, findings, investigations, organizations, users
+from app.api import auth, findings, investigations, organizations, reports, users
 from app.core.config import settings
 from app.db import init_db
 
@@ -28,6 +28,7 @@ app.include_router(users.router)
 app.include_router(organizations.router)
 app.include_router(investigations.router)
 app.include_router(findings.router)
+app.include_router(reports.router)
 
 
 @app.get("/health")

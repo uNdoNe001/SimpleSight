@@ -94,9 +94,12 @@ yet scheduled.
 
 Landed so far: (1) the collection-framework spine + four passive collectors, (2)
 persistence, auth, tenancy, and the full investigation flow, (3) an async RQ job queue,
-(4) the React/TS SPA, and (5) a findings layer — a deterministic rule engine that derives
+(4) the React/TS SPA, (5) a findings layer — a deterministic rule engine that derives
 triageable, evidence-backed findings from collected assets (nothing invented), classifies
-each as confirmed vs. unverified, and preserves analyst triage across re-runs.
+each as confirmed vs. unverified, and preserves analyst triage across re-runs, and (6) the
+Executive Intelligence Report — a server-side PDF (ReportLab) rendering the authorization
+attestation, a number-driven executive summary, color-coded findings with their evidence,
+a digital-footprint summary, and a methodology/limitations section, downloadable from the UI.
 
 | Story | Status | Notes |
 |---|---|---|
@@ -126,6 +129,9 @@ each as confirmed vs. unverified, and preserves analyst triage across re-runs.
 | SMPLSGHT-38 Investigation status in UI | ✅ done | status badges + live polling while running |
 | SMPLSGHT-36 Findings list | ✅ done | findings list w/ severity + dismissed filters, triage control (`FindingsSection.tsx`) |
 | SMPLSGHT-37 Finding detail / evidence | ✅ done | per-finding evidence envelope (asset refs + sources) in UI |
+| SMPLSGHT-39 Exec report template | ✅ done | ReportLab Platypus template (`app/services/report.py`) |
+| SMPLSGHT-40 Server-side PDF generation | ✅ done | `build_report_pdf()` → PDF bytes; pure/offline-testable |
+| SMPLSGHT-41 Report download from UI | ✅ done | `GET /investigations/{id}/report.pdf`; authed blob download button |
 | SMPLSGHT-16 Discovery-plan generation | ⬜ not started | — |
 | SMPLSGHT-11 Secrets management | ⬜ not started | env vars for now; no secrets manager |
 | SMPLSGHT-18 Job queue | ✅ done | RQ worker; `/run` returns 202, `QUEUE_EAGER` for dev |

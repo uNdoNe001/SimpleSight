@@ -58,6 +58,27 @@ export function InvestigationPage() {
     }
   }
 
+  const [downloading, setDownloading] = useState(false);
+  async function downloadReport() {
+    setError(null);
+    setDownloading(true);
+    try {
+      const blob = await api.getBlob(`/investigations/${id}/report.pdf`);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `simplesight-report-${id?.slice(0, 8)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to download report");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   const assets: Asset[] = inv?.assets ?? [];
   const findings: Finding[] = inv?.findings ?? [];
   const types = useMemo(
@@ -110,11 +131,23 @@ export function InvestigationPage() {
           </form>
         )}
 
-        {canWrite && authorized && inv.status !== "running" && (
-          <div style={{ marginTop: "1rem" }}>
-            <button className="btn" onClick={run}>
-              {TERMINAL.includes(inv.status) ? "Re-run collection" : "Run collection"}
-            </button>
+        {(canWrite || TERMINAL.includes(inv.status)) && inv.status !== "running" && (
+          <div className="row" style={{ marginTop: "1rem", flexWrap: "wrap" }}>
+            {canWrite && authorized && (
+              <button className="btn" style={{ flex: "0 0 auto" }} onClick={run}>
+                {TERMINAL.includes(inv.status) ? "Re-run collection" : "Run collection"}
+              </button>
+            )}
+            {TERMINAL.includes(inv.status) && (
+              <button
+                className="btn secondary"
+                style={{ flex: "0 0 auto" }}
+                onClick={downloadReport}
+                disabled={downloading}
+              >
+                {downloading ? "Preparing…" : "Download report (PDF)"}
+              </button>
+            )}
           </div>
         )}
         {inv.status === "running" && <p className="muted" style={{ marginTop: "1rem" }}>Collection running… this page updates automatically.</p>}
