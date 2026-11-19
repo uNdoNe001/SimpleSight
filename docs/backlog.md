@@ -117,6 +117,11 @@ auth and tenant isolation, and investigations persist their assets.
 | SMPLSGHT-24 Subdomain discovery | 🟡 partial | CT-powered; add passive-DNS sources later |
 | SMPLSGHT-30 Normalize to canonical assets | ✅ done | `app/services/assets.py` |
 | SMPLSGHT-31 Deduplicate/consolidate | ✅ done | noisy-OR confidence merge |
+| SMPLSGHT-34 App shell + auth UI | ✅ done | React/TS SPA, login/signup (`frontend/`) |
+| SMPLSGHT-35 Main dashboard | ✅ done | summary tiles + recent investigations |
+| SMPLSGHT-38 Investigation status in UI | ✅ done | status badges + live polling while running |
+| SMPLSGHT-36 Findings list | 🟡 partial | asset list w/ type + confidence filters; findings model pending |
+| SMPLSGHT-37 Finding detail / evidence | 🟡 partial | asset rows show sources/confidence; findings detail pending |
 | SMPLSGHT-16 Discovery-plan generation | ⬜ not started | — |
 | SMPLSGHT-11 Secrets management | ⬜ not started | env vars for now; no secrets manager |
 | SMPLSGHT-18 Job queue | ✅ done | RQ worker; `/run` returns 202, `QUEUE_EAGER` for dev |

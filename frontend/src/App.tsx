@@ -1,23 +1,25 @@
-import { useEffect, useState } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "./auth/AuthContext";
+import { Layout } from "./components/Layout";
+import { LoginPage } from "./pages/LoginPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { OrganizationsPage } from "./pages/OrganizationsPage";
+import { InvestigationPage } from "./pages/InvestigationPage";
 
 export function App() {
-  const [health, setHealth] = useState<string>("checking…");
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    fetch("/api/health")
-      .then((r) => r.json())
-      .then((d) => setHealth(d.status ?? "unknown"))
-      .catch(() => setHealth("unreachable"));
-  }, []);
+  if (loading) return <p className="muted" style={{ padding: "2rem" }}>Loading…</p>;
+  if (!user) return <LoginPage />;
 
   return (
-    <main style={{ fontFamily: "system-ui, sans-serif", padding: "2rem", maxWidth: 640 }}>
-      <h1>SimpleSight</h1>
-      <p>Open-Source Intelligence &amp; Digital Footprint Intelligence Platform</p>
-      <p style={{ color: "#666" }}>See What Others Miss.</p>
-      <p>
-        Backend health: <strong>{health}</strong>
-      </p>
-    </main>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/organizations" element={<OrganizationsPage />} />
+        <Route path="/investigations/:id" element={<InvestigationPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
   );
 }
