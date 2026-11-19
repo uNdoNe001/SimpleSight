@@ -117,9 +117,8 @@ auth and tenant isolation, and investigations persist their assets.
 | SMPLSGHT-31 Deduplicate/consolidate | ✅ done | noisy-OR confidence merge |
 | SMPLSGHT-16 Discovery-plan generation | ⬜ not started | — |
 | SMPLSGHT-11 Secrets management | ⬜ not started | env vars for now; no secrets manager |
-| SMPLSGHT-18 Job queue | ⬜ next | collection is synchronous; Redis/worker next |
+| SMPLSGHT-18 Job queue | ✅ done | RQ worker; `/run` returns 202, `QUEUE_EAGER` for dev |
 
 **Known MVP shortcuts** (tracked, not hidden): tables are created via
-`Base.metadata.create_all()` on startup — Alembic migrations are a follow-up; collection
-runs synchronously inside the request (job queue is the next slice); provider keys come
-from env, not a secrets manager.
+`Base.metadata.create_all()` on startup — Alembic migrations are a follow-up; provider keys
+come from env, not a secrets manager; collection now runs on an RQ worker (SMPLSGHT-18).

@@ -27,6 +27,20 @@ uvicorn app.main:app --reload
 
 Then `GET http://localhost:8000/health`.
 
+## Background worker
+
+Collection runs on an RQ worker (SMPLSGHT-18), not in the request. Start Redis (via the
+repo's `docker compose up -d`) and run a worker:
+
+```bash
+rq worker collection          # reads REDIS_URL / DATABASE_URL from the environment
+```
+
+`POST /api/investigations/{id}/run` enqueues a job and returns `202` with the investigation
+in `running` status; poll `GET /api/investigations/{id}` for results.
+
+For local dev without Redis or a worker, set `QUEUE_EAGER=true` to run collection inline.
+
 ## Conventions
 
 - Every collector implements the `Collector` interface in `collectors/base.py` and

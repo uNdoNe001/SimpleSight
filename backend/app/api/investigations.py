@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.deps import get_current_user, require_writer
 from app.models import Investigation, InvestigationStatus, Organization, User
+from app.queue import enqueue_investigation_run
 from app.schemas import (
     AuthorizationAttestation,
     InvestigationCreate,
@@ -29,7 +30,6 @@ from app.schemas import (
     InvestigationOut,
 )
 from app.services.audit import record_audit
-from app.services.investigations import AuthorizationRequiredError, run_and_persist
 
 router = APIRouter(prefix="/api/investigations", tags=["investigations"])
 
@@ -90,19 +90,37 @@ def authorize_investigation(
     return inv
 
 
-@router.post("/{inv_id}/run", response_model=InvestigationDetailOut)
+@router.post("/{inv_id}/run", response_model=InvestigationOut, status_code=status.HTTP_202_ACCEPTED)
 def run_investigation_endpoint(
     inv_id: str,
     user: User = Depends(require_writer),
     db: Session = Depends(get_db),
 ) -> Investigation:
+    """Enqueue a collection run. Returns 202 with the investigation in `running` status;
+    poll GET /api/investigations/{id} for results."""
     inv = _get_owned(db, inv_id, user.tenant_id)
-    try:
-        return run_and_persist(db, inv, actor_user_id=user.id)
-    except AuthorizationRequiredError as exc:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc))
-    except ValueError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+
+    # Fail fast on the client-correctable problems before enqueuing.
+    if not inv.is_authorized:
+        raise HTTPException(status.HTTP_403_FORBIDDEN,
+                            "record an authorization attestation before collecting")
+    if inv.status == InvestigationStatus.RUNNING.value:
+        raise HTTPException(status.HTTP_409_CONFLICT, "investigation is already running")
+    org = db.get(Organization, inv.organization_id)
+    if org is None or not org.primary_domain:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            "organization has no primary domain to investigate")
+
+    inv.status = InvestigationStatus.RUNNING.value
+    inv.started_at = datetime.now(UTC)
+    inv.completed_at = None
+    record_audit(db, tenant_id=user.tenant_id, actor_user_id=user.id,
+                 action="investigation.run.enqueue", target=inv.id)
+    db.commit()
+    db.refresh(inv)
+
+    enqueue_investigation_run(inv.id)
+    return inv
 
 
 @router.get("", response_model=list[InvestigationOut])

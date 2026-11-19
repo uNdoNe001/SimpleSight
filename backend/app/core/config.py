@@ -19,5 +19,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_ttl_minutes: int = 12 * 60
 
+    # Job queue. queue_eager runs tasks inline (no Redis/worker) — handy for local dev.
+    collection_queue: str = "collection"
+    queue_eager: bool = False
+
 
 settings = Settings()
