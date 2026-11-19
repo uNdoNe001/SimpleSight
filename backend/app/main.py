@@ -7,6 +7,7 @@ as the SMPLSGHT backlog is implemented.
 
 from fastapi import FastAPI
 
+from app.api import investigations
 from app.core.config import settings
 
 app = FastAPI(
@@ -15,8 +16,11 @@ app = FastAPI(
     description="Open-Source Intelligence & Digital Footprint Intelligence Platform",
 )
 
+app.include_router(investigations.router)
+
 
 @app.get("/health")
+@app.get("/api/health")
 def health() -> dict[str, str]:
-    """Liveness probe."""
+    """Liveness probe (served at both / and /api for the frontend dev proxy)."""
     return {"status": "ok", "env": settings.app_env}

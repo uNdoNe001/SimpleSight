@@ -89,3 +89,25 @@ This file mirrors the Jira structure for in-repo reference. Jira is the source o
 
 Remaining test cases (OSINT003, 005–010, 014–017, 019–023) map to Phase 2–4 and are not
 yet scheduled.
+
+## Implementation status
+
+First code slice landed — the collection-framework spine and the first two passive
+collectors, runnable end to end (`POST /api/investigations/run`) with no provider keys.
+
+| Story | Status | Notes |
+|---|---|---|
+| SMPLSGHT-19 Collector adapter interface | ✅ done | `collectors/base.py` |
+| SMPLSGHT-21 Provenance envelope | ✅ done | `Provenance` on every result |
+| SMPLSGHT-28 Partial/failure reporting | ✅ done | `collectors/runner.py` outcome roll-up |
+| SMPLSGHT-23 DNS records collector | ✅ done | `collectors/dns_records.py` |
+| SMPLSGHT-25 Certificate transparency collector | ✅ done | `collectors/certificate_transparency.py` (crt.sh) |
+| SMPLSGHT-24 Subdomain discovery | 🟡 partial | CT-powered for now; add passive-DNS sources later |
+| SMPLSGHT-30 Normalize to canonical assets | ✅ done | `app/services/assets.py` |
+| SMPLSGHT-31 Deduplicate/consolidate | ✅ done | noisy-OR confidence merge |
+| SMPLSGHT-29 Asset model | 🟡 partial | API schema only; no persistence yet |
+| SMPLSGHT-18 Job queue | ⬜ not started | synchronous runner for now; Redis/worker next |
+
+Not yet started: auth (SMPLSGHT-8), tenancy (SMPLSGHT-9), persistence, and everything
+downstream of them. The `/api/investigations/run` endpoint is a temporary synchronous
+slice with **no auth/tenancy/persistence** — it exists to exercise the framework.

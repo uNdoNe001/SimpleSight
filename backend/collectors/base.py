@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -35,10 +35,10 @@ class Provenance:
     collector_version: str = "0.0.1"
 
     @staticmethod
-    def now(source: str, confidence: float, evidence_ref: str | None = None) -> "Provenance":
+    def now(source: str, confidence: float, evidence_ref: str | None = None) -> Provenance:
         return Provenance(
             source=source,
-            collected_at=datetime.now(timezone.utc),
+            collected_at=datetime.now(UTC),
             confidence=confidence,
             evidence_ref=evidence_ref,
         )
