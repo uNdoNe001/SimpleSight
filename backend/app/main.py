@@ -1,21 +1,31 @@
-"""SimpleSight backend API entrypoint.
+"""SimpleSight backend API entrypoint."""
 
-Minimal scaffold: exposes a health check so the dev stack can be verified end to end.
-Feature routers (auth, organizations, investigations, findings) are added under app/api
-as the SMPLSGHT backlog is implemented.
-"""
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api import investigations
+from app.api import auth, investigations, organizations, users
 from app.core.config import settings
+from app.db import init_db
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # MVP: create tables on startup. Replace with Alembic migrations before production.
+    init_db()
+    yield
+
 
 app = FastAPI(
     title="SimpleSight API",
     version="0.0.1",
     description="Open-Source Intelligence & Digital Footprint Intelligence Platform",
+    lifespan=lifespan,
 )
 
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(organizations.router)
 app.include_router(investigations.router)
 
 

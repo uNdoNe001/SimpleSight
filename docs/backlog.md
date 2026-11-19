@@ -92,22 +92,34 @@ yet scheduled.
 
 ## Implementation status
 
-First code slice landed — the collection-framework spine and the first two passive
-collectors, runnable end to end (`POST /api/investigations/run`) with no provider keys.
+Two slices landed: (1) the collection-framework spine + first passive collectors, and
+(2) persistence, auth, tenancy, and the full investigation flow. The API now has real
+auth and tenant isolation, and investigations persist their assets.
 
 | Story | Status | Notes |
 |---|---|---|
+| SMPLSGHT-8 User authentication | ✅ done | signup/login/me, JWT, bcrypt (`app/api/auth.py`) |
+| SMPLSGHT-9 Tenant isolation | ✅ done | every row tenant-scoped; cross-tenant test |
+| SMPLSGHT-10 RBAC | ✅ done | Admin/Analyst/Read-only (`app/deps.py`, `app/api/users.py`) |
+| SMPLSGHT-12 Audit logging | 🟡 partial | writes `audit_logs`; no read API yet |
+| SMPLSGHT-13 Organization CRUD | ✅ done | `app/api/organizations.py` |
+| SMPLSGHT-14 Create investigation | ✅ done | draft → authorize → run flow |
+| SMPLSGHT-15 Authorization gate | ✅ done | run blocked without attestation |
+| SMPLSGHT-17 Investigation lifecycle | ✅ done | draft/running/complete/partial/failed |
+| SMPLSGHT-29 Asset model + persistence | ✅ done | `app/models.py` + persisted on run |
 | SMPLSGHT-19 Collector adapter interface | ✅ done | `collectors/base.py` |
 | SMPLSGHT-21 Provenance envelope | ✅ done | `Provenance` on every result |
 | SMPLSGHT-28 Partial/failure reporting | ✅ done | `collectors/runner.py` outcome roll-up |
 | SMPLSGHT-23 DNS records collector | ✅ done | `collectors/dns_records.py` |
-| SMPLSGHT-25 Certificate transparency collector | ✅ done | `collectors/certificate_transparency.py` (crt.sh) |
-| SMPLSGHT-24 Subdomain discovery | 🟡 partial | CT-powered for now; add passive-DNS sources later |
+| SMPLSGHT-25 Certificate transparency collector | ✅ done | crt.sh |
+| SMPLSGHT-24 Subdomain discovery | 🟡 partial | CT-powered; add passive-DNS sources later |
 | SMPLSGHT-30 Normalize to canonical assets | ✅ done | `app/services/assets.py` |
 | SMPLSGHT-31 Deduplicate/consolidate | ✅ done | noisy-OR confidence merge |
-| SMPLSGHT-29 Asset model | 🟡 partial | API schema only; no persistence yet |
-| SMPLSGHT-18 Job queue | ⬜ not started | synchronous runner for now; Redis/worker next |
+| SMPLSGHT-16 Discovery-plan generation | ⬜ not started | — |
+| SMPLSGHT-11 Secrets management | ⬜ not started | env vars for now; no secrets manager |
+| SMPLSGHT-18 Job queue | ⬜ next | collection is synchronous; Redis/worker next |
 
-Not yet started: auth (SMPLSGHT-8), tenancy (SMPLSGHT-9), persistence, and everything
-downstream of them. The `/api/investigations/run` endpoint is a temporary synchronous
-slice with **no auth/tenancy/persistence** — it exists to exercise the framework.
+**Known MVP shortcuts** (tracked, not hidden): tables are created via
+`Base.metadata.create_all()` on startup — Alembic migrations are a follow-up; collection
+runs synchronously inside the request (job queue is the next slice); provider keys come
+from env, not a secrets manager.
