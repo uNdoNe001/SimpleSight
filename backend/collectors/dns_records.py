@@ -18,12 +18,15 @@ from collectors.base import (
     Provenance,
 )
 
-RECORD_TYPES = ("A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA")
+RECORD_TYPES = ("A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA", "CAA", "DNSKEY")
 
 
 class DNSRecordsCollector(Collector):
     name = "dns_records"
-    description = "Resolves standard DNS records (A, AAAA, MX, NS, TXT, CNAME, SOA)."
+    description = (
+        "Resolves standard DNS records (A, AAAA, MX, NS, TXT, CNAME, SOA) plus CAA and "
+        "DNSKEY for hygiene checks."
+    )
     required_keys = ()  # keyless
     passive = True
 

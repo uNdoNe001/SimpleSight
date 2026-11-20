@@ -226,6 +226,56 @@ def _email_auth_findings(
     ]
 
 
+def _dns_hygiene_findings(
+    target: str, dns_records: list[AssetOut]
+) -> list[FindingCandidate]:
+    """Flag missing DNS hardening: no CAA (certificate-issuance restriction) and no DNSSEC.
+
+    Both rest on a direct authoritative lookup returning no such record, so they are
+    absence-based and classified UNVERIFIED. Emitted only when DNS resolution actually
+    succeeded (records present), so a failed lookup never reads as "missing".
+    """
+    if not dns_records:
+        return []
+    types = {a.attributes.get("record_type") for a in dns_records}
+    out: list[FindingCandidate] = []
+
+    if "CAA" not in types:
+        out.append(FindingCandidate(
+            finding_key=f"dns-no-caa:{target}",
+            finding_type="missing_caa",
+            title=f"No CAA record restricting certificate issuance for {target}",
+            description=(
+                f"'{target}' publishes no CAA record. CAA lets a domain owner list which "
+                f"certificate authorities may issue certificates for it; without one, any "
+                f"CA may issue, widening the mis-issuance risk. Inferred from absence — "
+                f"verify directly."
+            ),
+            severity=FindingSeverity.LOW,
+            confidence=0.6,
+            classification=FindingClassification.UNVERIFIED,
+            evidence=[_evidence(dns_records[0])],
+        ))
+
+    if "DNSKEY" not in types:
+        out.append(FindingCandidate(
+            finding_key=f"dns-no-dnssec:{target}",
+            finding_type="missing_dnssec",
+            title=f"DNSSEC does not appear to be enabled for {target}",
+            description=(
+                f"No DNSKEY record was observed for '{target}', indicating the zone is "
+                f"likely not DNSSEC-signed. Unsigned zones are more exposed to DNS spoofing "
+                f"and cache poisoning. Inferred from absence — confirm with the registrar/DNS "
+                f"provider before acting."
+            ),
+            severity=FindingSeverity.LOW,
+            confidence=0.6,
+            classification=FindingClassification.UNVERIFIED,
+            evidence=[_evidence(dns_records[0])],
+        ))
+    return out
+
+
 def _email_posture_findings(
     target: str, email_assets: list[AssetOut], dns_records: list[AssetOut]
 ) -> list[FindingCandidate]:
@@ -362,6 +412,7 @@ def derive_findings(target: str, assets: list[AssetOut]) -> list[FindingCandidat
     candidates += _registration_findings(whois_assets)
     candidates += _email_auth_findings(target, dns_records)
     candidates += _email_posture_findings(target, email_assets, dns_records)
+    candidates += _dns_hygiene_findings(target, dns_records)
     candidates += _surface_summary_finding(target, subdomains)
 
     order = {s: i for i, s in enumerate(

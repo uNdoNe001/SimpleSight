@@ -41,6 +41,36 @@ def _by_type(cands, finding_type):
     return [c for c in cands if c.finding_type == finding_type]
 
 
+def _dns(record_type: str, data: str) -> AssetOut:
+    return _asset("dns_record", f"{record_type} {data}",
+                  attributes={"record_type": record_type, "data": data})
+
+
+def test_dns_hygiene_flags_missing_caa_and_dnssec():
+    # Only an A record present -> no CAA, no DNSKEY -> both hygiene findings fire.
+    cands = derive_findings("example.com", [_dns("A", "1.2.3.4")])
+    caa = _by_type(cands, "missing_caa")
+    dnssec = _by_type(cands, "missing_dnssec")
+    assert len(caa) == 1 and caa[0].severity is FindingSeverity.LOW
+    assert caa[0].classification is FindingClassification.UNVERIFIED
+    assert len(dnssec) == 1 and dnssec[0].severity is FindingSeverity.LOW
+
+
+def test_dns_hygiene_satisfied_emits_nothing():
+    assets = [_dns("A", "1.2.3.4"), _dns("CAA", '0 issue "letsencrypt.org"'),
+              _dns("DNSKEY", "257 3 13 ...")]
+    cands = derive_findings("example.com", assets)
+    assert _by_type(cands, "missing_caa") == []
+    assert _by_type(cands, "missing_dnssec") == []
+
+
+def test_dns_hygiene_silent_without_dns_data():
+    # No dns_record assets at all (lookup failed) -> never reads as "missing".
+    cands = derive_findings("example.com", [_asset("subdomain", "www.example.com")])
+    assert _by_type(cands, "missing_caa") == []
+    assert _by_type(cands, "missing_dnssec") == []
+
+
 def _mx() -> AssetOut:
     return _asset("dns_record", "MX 10 mail.example.com",
                   attributes={"record_type": "MX", "data": "10 mail.example.com"})
