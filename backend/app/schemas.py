@@ -75,6 +75,21 @@ class FindingStatusUpdate(BaseModel):
     status: str = Field(pattern="^(open|triaged|dismissed)$")
 
 
+# --- secrets (provider keys) -----------------------------------------------------------
+
+class SecretSetRequest(BaseModel):
+    value: str = Field(min_length=1, max_length=4096)
+
+
+class SecretInfoOut(BaseModel):
+    """Status of a configured secret — never the value itself (SMPLSGHT-11)."""
+
+    name: str
+    source: str
+    configured: bool
+    updated_at: str | None = None
+
+
 # --- auth ------------------------------------------------------------------------------
 
 class SignupRequest(BaseModel):

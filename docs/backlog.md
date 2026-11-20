@@ -133,9 +133,11 @@ a digital-footprint summary, and a methodology/limitations section, downloadable
 | SMPLSGHT-40 Server-side PDF generation | ✅ done | `build_report_pdf()` → PDF bytes; pure/offline-testable |
 | SMPLSGHT-41 Report download from UI | ✅ done | `GET /investigations/{id}/report.pdf`; authed blob download button |
 | SMPLSGHT-16 Discovery-plan generation | ⬜ not started | — |
-| SMPLSGHT-11 Secrets management | ⬜ not started | env vars for now; no secrets manager |
+| SMPLSGHT-11 Secrets management | ✅ done | Fernet-encrypted tenant secret store + env fallback; admin API (`app/services/secrets.py`, `app/api/secrets.py`); resolved into collector config at run time |
 | SMPLSGHT-18 Job queue | ✅ done | RQ worker; `/run` returns 202, `QUEUE_EAGER` for dev |
 
 **Known MVP shortcuts** (tracked, not hidden): tables are created via
-`Base.metadata.create_all()` on startup — Alembic migrations are a follow-up; provider keys
-come from env, not a secrets manager; collection now runs on an RQ worker (SMPLSGHT-18).
+`Base.metadata.create_all()` on startup — Alembic migrations are a follow-up. Provider keys
+are managed by the secrets manager (SMPLSGHT-11): a Fernet-encrypted per-tenant store with
+an env fallback, administered via `/api/secrets` (write-only; values are never returned).
+The dev encryption key in `.env.example` must be overridden in any real environment.

@@ -10,7 +10,7 @@ import uuid
 from datetime import UTC, datetime
 from enum import Enum
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -187,6 +187,27 @@ class Finding(Base):
     )
 
     investigation: Mapped[Investigation] = relationship(back_populates="findings")
+
+
+class TenantSecret(Base):
+    """A provider API key (or similar secret) scoped to a tenant (SMPLSGHT-11).
+
+    The value is stored encrypted at rest (Fernet) in `ciphertext` and is never returned
+    through the API — only set, listed by name, and deleted. The collection pipeline
+    resolves these into a collector's `context.config` at run time.
+    """
+
+    __tablename__ = "tenant_secrets"
+    __table_args__ = (UniqueConstraint("tenant_id", "name", name="uq_tenant_secret"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(String(36), ForeignKey("tenants.id"), index=True)
+    name: Mapped[str] = mapped_column(String(100), index=True)
+    ciphertext: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now
+    )
 
 
 class AuditLog(Base):

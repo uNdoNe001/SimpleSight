@@ -23,5 +23,12 @@ class Settings(BaseSettings):
     collection_queue: str = "collection"
     queue_eager: bool = False
 
+    # Secrets-at-rest encryption (Fernet key: url-safe base64, 32 bytes).
+    # This dev default is intentionally weak and must be overridden in every real
+    # environment — rotating it makes existing stored secrets undecryptable.
+    secrets_encryption_key: str = "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+    # Env fallback for provider keys: SECRET_ENV_PREFIX + <NAME uppercased>.
+    secret_env_prefix: str = "SIMPLESIGHT_SECRET_"
+
 
 settings = Settings()

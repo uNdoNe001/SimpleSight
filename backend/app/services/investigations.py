@@ -16,6 +16,8 @@ from app.models import Asset, Investigation, InvestigationStatus, Organization
 from app.services.audit import record_audit
 from app.services.findings import derive_findings, persist_findings
 from app.services.pipeline import run_investigation as run_pipeline
+from app.services.secrets import resolve_many
+from collectors.registry import required_secret_names
 
 
 class AuthorizationRequiredError(Exception):
@@ -37,7 +39,10 @@ def run_and_persist(db: Session, investigation: Investigation, actor_user_id: st
     investigation.started_at = datetime.now(UTC)
     db.flush()
 
-    result = run_pipeline(target)
+    # Resolve the tenant's provider keys centrally (SMPLSGHT-11); key-gated collectors
+    # that remain unconfigured are skipped, not failed.
+    config = resolve_many(db, investigation.tenant_id, required_secret_names())
+    result = run_pipeline(target, config=config)
 
     # Replace any prior assets for this investigation (re-run = fresh snapshot).
     investigation.assets.clear()

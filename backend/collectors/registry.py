@@ -22,3 +22,15 @@ def default_collectors() -> list[Collector]:
         WhoisRdapCollector(),
         HistoricalRecordsCollector(),
     ]
+
+
+def required_secret_names(collectors: list[Collector] | None = None) -> list[str]:
+    """The sorted, de-duplicated provider keys the given (or default) collectors may need.
+
+    Drives the secrets manager (SMPLSGHT-11): these are the names an admin can configure
+    and whose presence decides whether a key-gated collector runs or is skipped.
+    """
+    names: set[str] = set()
+    for c in collectors or default_collectors():
+        names.update(c.required_keys)
+    return sorted(names)

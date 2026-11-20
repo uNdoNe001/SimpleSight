@@ -16,9 +16,16 @@ from collectors.runner import overall_outcome, run_collectors
 
 
 def run_investigation(
-    domain: str, collectors: list[Collector] | None = None
+    domain: str,
+    collectors: list[Collector] | None = None,
+    config: dict | None = None,
 ) -> RunInvestigationResponse:
-    context = CollectionContext(target=domain.strip().lower().rstrip("."))
+    """Run the collectors against `domain`.
+
+    `config` carries resolved provider keys/limits into each collector's context
+    (SMPLSGHT-11): a collector whose `required_keys` are absent here is SKIPPED, not failed.
+    """
+    context = CollectionContext(target=domain.strip().lower().rstrip("."), config=config or {})
     runs = run_collectors(collectors or default_collectors(), context)
     assets = normalize_and_dedup(runs)
 
