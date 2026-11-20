@@ -71,10 +71,10 @@ def test_plan_endpoint_on_draft(client):
     assert plan["additional_targets"] == ["acme.io"]
     assert plan["passive_only"] is True
     # the MVP collectors are all keyless, so all are enabled
-    assert plan["enabled_count"] == len(plan["steps"]) == 5
+    assert plan["enabled_count"] == len(plan["steps"]) == 6
     assert plan["skipped_count"] == 0
     names = {s["collector"] for s in plan["steps"]}
-    assert {"dns_records", "certificate_transparency", "whois_rdap",
+    assert {"dns_records", "certificate_transparency", "passive_dns", "whois_rdap",
             "historical_records", "tech_fingerprint"} == names
     assert all(s["description"] for s in plan["steps"])
 

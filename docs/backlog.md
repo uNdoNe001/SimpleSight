@@ -120,7 +120,7 @@ a digital-footprint summary, and a methodology/limitations section, downloadable
 | SMPLSGHT-25 Certificate transparency collector | ✅ done | crt.sh |
 | SMPLSGHT-22 WHOIS / registration collector | ✅ done | RDAP (`collectors/whois_rdap.py`) |
 | SMPLSGHT-27 Historical records collector | ✅ done | Wayback CDX (`collectors/historical_records.py`) |
-| SMPLSGHT-24 Subdomain discovery | 🟡 partial | CT-powered; add passive-DNS sources later |
+| SMPLSGHT-24 Subdomain discovery | ✅ done | CT + passive-DNS aggregators (OTX, HackerTarget) in `collectors/passive_dns.py`; multi-source hits merge via noisy-OR |
 | SMPLSGHT-26 Technology fingerprinting | ✅ done | passive DNS-signal fingerprinting (NS/MX/SPF/TXT → `technology` assets); `collectors/tech_fingerprint.py` |
 | SMPLSGHT-30 Normalize to canonical assets | ✅ done | `app/services/assets.py` |
 | SMPLSGHT-31 Deduplicate/consolidate | ✅ done | noisy-OR confidence merge |

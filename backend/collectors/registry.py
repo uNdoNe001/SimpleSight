@@ -11,6 +11,7 @@ from collectors.base import Collector
 from collectors.certificate_transparency import CertificateTransparencyCollector
 from collectors.dns_records import DNSRecordsCollector
 from collectors.historical_records import HistoricalRecordsCollector
+from collectors.passive_dns import PassiveDnsCollector
 from collectors.tech_fingerprint import TechnologyFingerprintCollector
 from collectors.whois_rdap import WhoisRdapCollector
 
@@ -20,6 +21,7 @@ def default_collectors() -> list[Collector]:
     return [
         DNSRecordsCollector(),
         CertificateTransparencyCollector(),
+        PassiveDnsCollector(),
         WhoisRdapCollector(),
         HistoricalRecordsCollector(),
         TechnologyFingerprintCollector(),
