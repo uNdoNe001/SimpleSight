@@ -197,6 +197,26 @@ export function InvestigationPage() {
         </>
       )}
 
+      {inv?.exposure_score && (findings.length > 0 || inv.status === "complete" || inv.status === "partial") && (
+        <>
+          <h2>Exposure score</h2>
+          <div className="card exposure-card">
+            <div className={`exposure-dial grade-${inv.exposure_score.grade}`}>
+              <span className="exposure-num">{inv.exposure_score.score}</span>
+              <span className="exposure-den">/100</span>
+              <span className="exposure-grade">
+                {inv.exposure_score.grade} · {inv.exposure_score.label}
+              </span>
+            </div>
+            <p className="muted exposure-rationale">
+              {inv.exposure_score.rationale}{" "}
+              A relative indicator from passively observed findings — not an assertion of
+              overall security.
+            </p>
+          </div>
+        </>
+      )}
+
       <FindingsSection findings={findings} canWrite={canWrite} onChanged={load} />
 
       <h2>Discovered assets ({assets.length})</h2>

@@ -34,8 +34,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Finding, Investigation, Organization
+from app.services.scoring import ExposureScore, compute_exposure
 
 SEVERITY_ORDER = ["critical", "high", "medium", "low", "info"]
+# Grade -> accent color for the exposure-score block.
+_GRADE_COLORS = {
+    "F": colors.HexColor("#991b1b"), "D": colors.HexColor("#dc2626"),
+    "C": colors.HexColor("#d97706"), "B": colors.HexColor("#a16207"),
+    "A": colors.HexColor("#047857"),
+}
 _SEVERITY_COLORS = {
     "critical": colors.HexColor("#991b1b"),
     "high": colors.HexColor("#dc2626"),
@@ -63,6 +70,7 @@ class ReportData:
     findings: list[dict] = field(default_factory=list)
     asset_counts: dict[str, int] = field(default_factory=dict)
     total_assets: int = 0
+    exposure: ExposureScore | None = None
     generated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -104,6 +112,7 @@ def gather_report_data(db: Session, investigation: Investigation) -> ReportData:
         ],
         asset_counts=dict(counts),
         total_assets=sum(counts.values()),
+        exposure=compute_exposure(findings),
     )
 
 
@@ -201,6 +210,31 @@ def build_report_pdf(data: ReportData) -> bytes:
     active = [f for f in data.findings if f["status"] != "dismissed"]
     sev_counts = Counter(f["severity"] for f in active)
     story.append(Paragraph("Executive summary", h2))
+
+    # Exposure score (SMPLSGHT-48): a single number summarizing posture.
+    exposure = data.exposure or compute_exposure(data.findings)
+    grade_color = _GRADE_COLORS.get(exposure.grade, _MUTED)
+    score_cell = Paragraph(
+        f'<font size="22"><b>{exposure.score}</b></font>'
+        f'<font size="10">/100</font><br/>'
+        f'<font size="11"><b>Grade {exposure.grade} · {exposure.label}</b></font>',
+        ParagraphStyle("score", parent=f_title, textColor=grade_color, leading=24))
+    rationale_cell = Paragraph(
+        f"<b>Exposure score.</b> {escape(exposure.rationale)} A relative indicator derived "
+        f"only from passively observed findings — not an assertion of overall security.",
+        small)
+    score_table = Table([[score_cell, rationale_cell]], colWidths=[1.6 * inch, 5.0 * inch])
+    score_table.setStyle(TableStyle([
+        ("BOX", (0, 0), (-1, -1), 0.5, _RULE),
+        ("LINEAFTER", (0, 0), (0, 0), 0.5, _RULE),
+        ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#f8fafc")),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10), ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 8), ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+    ]))
+    story.append(score_table)
+    story.append(Spacer(1, 10))
+
     story.append(Paragraph(_summary_narrative(active, sev_counts), body))
     story.append(Spacer(1, 8))
 

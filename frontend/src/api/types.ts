@@ -104,4 +104,14 @@ export interface Investigation {
   completed_at: string | null;
   assets?: Asset[];
   findings?: Finding[];
+  exposure_score?: ExposureScore;
+}
+
+export interface ExposureScore {
+  score: number;
+  grade: string;
+  label: string;
+  counts: Record<string, number>;
+  scored_findings: number;
+  rationale: string;
 }

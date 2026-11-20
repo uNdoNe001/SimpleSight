@@ -8,7 +8,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field
+
+from app.services.scoring import compute_exposure
 
 # --- collection / assets ---------------------------------------------------------------
 
@@ -74,6 +76,19 @@ class FindingOut(BaseModel):
 
 class FindingStatusUpdate(BaseModel):
     status: str = Field(pattern="^(open|triaged|dismissed)$")
+
+
+class ExposureScoreOut(BaseModel):
+    """Rolled-up exposure score for an investigation (SMPLSGHT-48)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    score: int = Field(ge=0, le=100)
+    grade: str
+    label: str
+    counts: dict[str, int] = Field(default_factory=dict)
+    scored_findings: int
+    rationale: str
 
 
 # --- audit log -------------------------------------------------------------------------
@@ -227,3 +242,8 @@ class InvestigationOut(BaseModel):
 class InvestigationDetailOut(InvestigationOut):
     assets: list[AssetOut] = Field(default_factory=list)
     findings: list[FindingOut] = Field(default_factory=list)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def exposure_score(self) -> ExposureScoreOut:
+        return ExposureScoreOut.model_validate(compute_exposure(self.findings))

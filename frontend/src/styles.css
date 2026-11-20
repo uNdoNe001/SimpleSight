@@ -128,3 +128,23 @@ input, select, textarea {
 .evidence li { margin: 0.15rem 0; }
 .triage { display: flex; align-items: center; gap: 0.4rem; }
 .triage select { width: auto; padding: 0.3rem 0.5rem; font-size: 0.82rem; }
+
+/* Exposure score (SMPLSGHT-48) */
+.exposure-card { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+.exposure-dial {
+  display: grid; grid-template-columns: auto auto; align-items: baseline;
+  column-gap: 0.15rem; padding: 0.6rem 1rem; border-radius: 10px;
+  border: 1px solid var(--border, #e2e8f0); min-width: 150px;
+  --grade: #64748b; color: var(--grade);
+}
+.exposure-dial.grade-A { --grade: #047857; }
+.exposure-dial.grade-B { --grade: #a16207; }
+.exposure-dial.grade-C { --grade: #d97706; }
+.exposure-dial.grade-D { --grade: #dc2626; }
+.exposure-dial.grade-F { --grade: #991b1b; }
+.exposure-num { font-size: 2.4rem; font-weight: 700; line-height: 1; }
+.exposure-den { font-size: 0.9rem; color: var(--muted); }
+.exposure-grade {
+  grid-column: 1 / -1; margin-top: 0.3rem; font-size: 0.85rem; font-weight: 600;
+}
+.exposure-rationale { flex: 1; min-width: 240px; margin: 0; }
