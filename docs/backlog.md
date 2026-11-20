@@ -106,7 +106,7 @@ a digital-footprint summary, and a methodology/limitations section, downloadable
 | SMPLSGHT-8 User authentication | ✅ done | signup/login/me, JWT, bcrypt (`app/api/auth.py`) |
 | SMPLSGHT-9 Tenant isolation | ✅ done | every row tenant-scoped; cross-tenant test |
 | SMPLSGHT-10 RBAC | ✅ done | Admin/Analyst/Read-only (`app/deps.py`, `app/api/users.py`) |
-| SMPLSGHT-12 Audit logging | 🟡 partial | writes `audit_logs`; no read API yet |
+| SMPLSGHT-12 Audit logging | ✅ done | writes across auth + collection; admin read API `GET /api/audit` (filter/paginate) + Audit UI |
 | SMPLSGHT-13 Organization CRUD | ✅ done | `app/api/organizations.py` |
 | SMPLSGHT-14 Create investigation | ✅ done | draft → authorize → run flow |
 | SMPLSGHT-15 Authorization gate | ✅ done | run blocked without attestation |

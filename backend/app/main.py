@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api import (
+    audit,
     auth,
     findings,
     investigations,
@@ -40,6 +41,7 @@ app.include_router(investigations.router)
 app.include_router(findings.router)
 app.include_router(reports.router)
 app.include_router(secrets.router)
+app.include_router(audit.router)
 
 
 @app.get("/health")

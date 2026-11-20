@@ -61,6 +61,15 @@ export interface Finding {
   updated_at: string;
 }
 
+export interface AuditEntry {
+  id: string;
+  actor_user_id: string | null;
+  action: string;
+  target: string | null;
+  detail: Record<string, unknown>;
+  created_at: string;
+}
+
 export interface PlanStep {
   collector: string;
   description: string;

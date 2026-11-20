@@ -76,6 +76,21 @@ class FindingStatusUpdate(BaseModel):
     status: str = Field(pattern="^(open|triaged|dismissed)$")
 
 
+# --- audit log -------------------------------------------------------------------------
+
+class AuditLogOut(BaseModel):
+    """An audit-trail entry (SMPLSGHT-12). Read-only, admin-scoped."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    actor_user_id: str | None
+    action: str
+    target: str | None
+    detail: dict
+    created_at: datetime
+
+
 # --- discovery plan --------------------------------------------------------------------
 
 class PlanStepOut(BaseModel):
