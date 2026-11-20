@@ -41,6 +41,45 @@ def _by_type(cands, finding_type):
     return [c for c in cands if c.finding_type == finding_type]
 
 
+def test_cloud_storage_exposure_from_cname_target():
+    # An S3 bucket referenced via a subdomain CNAME target is flagged.
+    assets = [_asset("takeover_candidate", "assets.example.com", sources=["dns"], attributes={
+        "subdomain": "assets.example.com", "service": "AWS S3",
+        "cname_target": "acme-assets.s3.amazonaws.com", "dangling": False})]
+    found = _by_type(derive_findings("example.com", assets), "cloud_storage_exposure")
+    assert len(found) == 1
+    assert found[0].severity is FindingSeverity.LOW
+    assert "AWS S3" in found[0].description
+
+
+def test_cloud_storage_exposure_from_certificate_hostname():
+    # A GCS endpoint appearing as a discovered subdomain value is also caught.
+    assets = [_asset("subdomain", "data.example.com.storage.googleapis.com", sources=["crt.sh (CT)"])]
+    found = _by_type(derive_findings("example.com", assets), "cloud_storage_exposure")
+    assert len(found) == 1
+    assert "Google Cloud Storage" in found[0].description
+
+
+def test_third_party_footprint_summarizes_services_and_tech():
+    assets = [
+        _asset("takeover_candidate", "shop.example.com", sources=["dns"], attributes={
+            "subdomain": "shop.example.com", "service": "Shopify", "dangling": False}),
+        _asset("technology", "Cloudflare", sources=["dns"],
+               attributes={"category": "CDN", "evidence_record": "NS x.ns.cloudflare.com"}),
+    ]
+    found = _by_type(derive_findings("example.com", assets), "third_party_footprint")
+    assert len(found) == 1
+    assert found[0].classification is FindingClassification.CONFIRMED
+    assert "Shopify" in found[0].description and "Cloudflare" in found[0].description
+
+
+def test_no_cloud_findings_without_cloud_signals():
+    assets = [_asset("subdomain", "www.example.com")]
+    cands = derive_findings("example.com", assets)
+    assert _by_type(cands, "cloud_storage_exposure") == []
+    assert _by_type(cands, "third_party_footprint") == []
+
+
 def _takeover(sub: str, *, service: str, dangling: bool) -> AssetOut:
     return _asset("takeover_candidate", sub, confidence=0.85 if dangling else 0.6,
                   sources=["dns"], attributes={

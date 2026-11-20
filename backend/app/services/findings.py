@@ -276,6 +276,92 @@ def _takeover_findings(takeover_assets: list[AssetOut]) -> list[FindingCandidate
     return out
 
 
+#: Cloud object-storage endpoints. A hostname matching one of these in DNS/CT data means a
+#: storage bucket is publicly referenced — worth verifying its access controls.
+_STORAGE_PROVIDERS: dict[str, tuple[str, ...]] = {
+    "AWS S3": ("s3.amazonaws.com", "s3-website", ".s3."),
+    "Azure Blob Storage": ("blob.core.windows.net",),
+    "Google Cloud Storage": ("storage.googleapis.com", "storage.cloud.google.com"),
+    "Cloudflare R2": ("r2.cloudflarestorage.com",),
+    "DigitalOcean Spaces": ("digitaloceanspaces.com",),
+    "Backblaze B2": ("backblazeb2.com",),
+}
+
+
+def _hostish_values(asset: AssetOut) -> list[str]:
+    """Every host-like string an asset carries (its value plus common target/record attrs)."""
+    vals = [asset.value]
+    for k in ("cname_target", "data", "target", "evidence_record"):
+        v = asset.attributes.get(k)
+        if isinstance(v, str):
+            vals.append(v)
+    return [v.lower() for v in vals if v]
+
+
+def _cloud_exposure_findings(
+    target: str, assets: list[AssetOut]
+) -> list[FindingCandidate]:
+    """Categorize cloud/storage and third-party exposure from already-collected evidence.
+
+    Pure over the asset list (no new collection): scans CNAME targets, certificate hostnames,
+    and fingerprinted technologies. Produces a storage-exposure finding (buckets are a common
+    data-leak vector) and a third-party footprint summary for the executive report.
+    """
+    storage: dict[str, set[str]] = {}
+    storage_evidence: dict[str, AssetOut] = {}
+    for a in assets:
+        for host in _hostish_values(a):
+            for provider, pats in _STORAGE_PROVIDERS.items():
+                if any(p in host for p in pats):
+                    storage.setdefault(provider, set()).add(host)
+                    storage_evidence.setdefault(provider, a)
+
+    out: list[FindingCandidate] = []
+    if storage:
+        providers = sorted(storage)
+        hosts = sorted({h for hs in storage.values() for h in hs})[:10]
+        out.append(FindingCandidate(
+            finding_key=f"cloud-storage:{target}",
+            finding_type="cloud_storage_exposure",
+            title=f"Cloud storage endpoint(s) referenced for {target}",
+            description=(
+                f"Public DNS/certificate data references cloud object storage "
+                f"({', '.join(providers)}). Misconfigured buckets are a common data-exposure "
+                f"vector — verify each enforces authentication and does not list or serve "
+                f"private objects. Referenced: {', '.join(hosts)}."
+            ),
+            severity=FindingSeverity.LOW,
+            confidence=0.7,
+            classification=FindingClassification.UNVERIFIED,
+            evidence=[_evidence(e) for e in list(storage_evidence.values())[:5]],
+        ))
+
+    services: dict[str, AssetOut] = {}
+    for a in assets:
+        if a.asset_type == "takeover_candidate" and a.attributes.get("service"):
+            services.setdefault(str(a.attributes["service"]), a)
+        elif a.asset_type == "technology" and a.value:
+            services.setdefault(a.value, a)
+    if services:
+        names = sorted(services)
+        out.append(FindingCandidate(
+            finding_key=f"third-party-footprint:{target}",
+            finding_type="third_party_footprint",
+            title=f"{len(names)} third-party service(s) identified for {target}",
+            description=(
+                f"Passive signals indicate reliance on external providers: "
+                f"{', '.join(names)}. Each is part of the supply-chain attack surface — "
+                f"ensure vendor accounts are secured and any offboarded/unused resources are "
+                f"reclaimed so they cannot be hijacked."
+            ),
+            severity=FindingSeverity.INFO,
+            confidence=0.9,
+            classification=FindingClassification.CONFIRMED,
+            evidence=[_evidence(e) for e in list(services.values())[:8]],
+        ))
+    return out
+
+
 def _dns_hygiene_findings(
     target: str, dns_records: list[AssetOut]
 ) -> list[FindingCandidate]:
@@ -465,6 +551,7 @@ def derive_findings(target: str, assets: list[AssetOut]) -> list[FindingCandidat
     candidates += _email_posture_findings(target, email_assets, dns_records)
     candidates += _dns_hygiene_findings(target, dns_records)
     candidates += _takeover_findings(takeover_assets)
+    candidates += _cloud_exposure_findings(target, assets)
     candidates += _surface_summary_finding(target, subdomains)
 
     order = {s: i for i, s in enumerate(
