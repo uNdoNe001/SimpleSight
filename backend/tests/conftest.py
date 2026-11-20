@@ -12,8 +12,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.config import settings
 from app.db import Base, get_db
 from app.main import app
+
+# The takeover-detection second stage does live CNAME lookups; keep it off by default so
+# the suite stays fully offline. Tests that exercise it pass an explicit `enrichment=[...]`
+# (with a fake resolver), which bypasses this gate.
+settings.takeover_detection_enabled = False
 from collectors.base import (
     CollectionContext,
     Collector,

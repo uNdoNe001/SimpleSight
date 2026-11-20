@@ -13,6 +13,7 @@ from collectors.dns_records import DNSRecordsCollector
 from collectors.email_security import EmailSecurityCollector
 from collectors.historical_records import HistoricalRecordsCollector
 from collectors.passive_dns import PassiveDnsCollector
+from collectors.subdomain_takeover import SubdomainTakeoverCollector
 from collectors.tech_fingerprint import TechnologyFingerprintCollector
 from collectors.whois_rdap import WhoisRdapCollector
 
@@ -28,6 +29,16 @@ def default_collectors() -> list[Collector]:
         TechnologyFingerprintCollector(),
         EmailSecurityCollector(),
     ]
+
+
+def enrichment_collectors() -> list[Collector]:
+    """Dependent collectors that run in a second pass, after subdomains are discovered.
+
+    They receive the discovered subdomains via `context.scope["subdomains"]`, so they are
+    kept out of `default_collectors` (and the discovery plan) — they have nothing to do
+    until the first pass produces subdomains.
+    """
+    return [SubdomainTakeoverCollector()]
 
 
 def required_secret_names(collectors: list[Collector] | None = None) -> list[str]:

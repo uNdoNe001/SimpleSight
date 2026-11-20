@@ -13,7 +13,7 @@ from app.schemas import CollectorRunOut, RunInvestigationResponse
 from app.services.assets import normalize_and_dedup
 from app.services.ratelimit import NullRateLimiter, RateLimiter
 from collectors.base import CollectionContext, Collector
-from collectors.registry import default_collectors
+from collectors.registry import default_collectors, enrichment_collectors
 from collectors.runner import overall_outcome, run_collectors
 
 
@@ -22,21 +22,36 @@ def run_investigation(
     collectors: list[Collector] | None = None,
     config: dict | None = None,
     rate_limiter: object | None = None,
+    enrichment: list[Collector] | None = None,
 ) -> RunInvestigationResponse:
     """Run the collectors against `domain`.
 
     `config` carries resolved provider keys/limits into each collector's context
     (SMPLSGHT-11): a collector whose `required_keys` are absent here is SKIPPED, not failed.
     A per-provider rate limiter (SMPLSGHT-20) throttles external calls and tallies usage.
+
+    A second, dependent stage then runs the `enrichment` collectors (subdomain-takeover
+    detection, SMPLSGHT-45) over the subdomains the first pass discovered, handing them in
+    via `context.scope["subdomains"]`. It is skipped when there are no subdomains.
     """
     limiter = rate_limiter or (RateLimiter() if settings.rate_limit_enabled else NullRateLimiter())
-    context = CollectionContext(
-        target=domain.strip().lower().rstrip("."),
-        config=config or {},
-        rate_limiter=limiter,
-    )
+    target = domain.strip().lower().rstrip(".")
+    context = CollectionContext(target=target, config=config or {}, rate_limiter=limiter)
     runs = run_collectors(collectors or default_collectors(), context)
     assets = normalize_and_dedup(runs)
+
+    # Second stage: enrichment collectors that depend on discovered subdomains.
+    enrich_list = enrichment if enrichment is not None else (
+        enrichment_collectors() if settings.takeover_detection_enabled else []
+    )
+    subdomains = sorted({a.value for a in assets if a.asset_type == "subdomain"})
+    if enrich_list and subdomains:
+        enrich_ctx = CollectionContext(
+            target=target, config=config or {},
+            scope={"subdomains": subdomains}, rate_limiter=limiter,
+        )
+        runs = runs + run_collectors(enrich_list, enrich_ctx)
+        assets = normalize_and_dedup(runs)
 
     collector_outs = [
         CollectorRunOut(

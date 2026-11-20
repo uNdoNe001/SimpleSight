@@ -226,6 +226,56 @@ def _email_auth_findings(
     ]
 
 
+def _takeover_findings(takeover_assets: list[AssetOut]) -> list[FindingCandidate]:
+    """Grade subdomain-takeover candidates surfaced by the dependent collector.
+
+    A CNAME to a takeover-prone service whose target no longer resolves is a strong,
+    actionable signal (HIGH, confirmed). A CNAME to such a service whose target still
+    resolves is a review item (MEDIUM, unverified) — it may be perfectly legitimate.
+    The check is passive (DNS only), so neither grade asserts an exploitable takeover.
+    """
+    out: list[FindingCandidate] = []
+    for asset in takeover_assets:
+        sub = asset.attributes.get("subdomain", asset.value)
+        service = asset.attributes.get("service", "a third-party service")
+        target = asset.attributes.get("cname_target", "")
+        if asset.attributes.get("dangling"):
+            out.append(FindingCandidate(
+                finding_key=f"takeover:{sub}",
+                finding_type="subdomain_takeover",
+                title=f"Possible subdomain takeover: {sub}",
+                description=(
+                    f"'{sub}' is a CNAME to {service} ('{target}'), but that target does "
+                    f"not resolve — a classic dangling-record pattern. If the {service} "
+                    f"resource is unclaimed, an attacker could register it and serve "
+                    f"content from '{sub}'. Verify and either reclaim the resource or "
+                    f"remove the dangling DNS record. (Detected passively via DNS; confirm "
+                    f"before acting.)"
+                ),
+                severity=FindingSeverity.HIGH,
+                confidence=asset.confidence,
+                classification=FindingClassification.CONFIRMED,
+                evidence=[_evidence(asset)],
+            ))
+        else:
+            out.append(FindingCandidate(
+                finding_key=f"takeover-review:{sub}",
+                finding_type="subdomain_delegation",
+                title=f"Subdomain delegates to {service}: {sub}",
+                description=(
+                    f"'{sub}' is a CNAME to {service} ('{target}'). This is often "
+                    f"legitimate, but services of this kind are a common takeover vector if "
+                    f"the backing resource is ever released. Confirm the resource is claimed "
+                    f"and monitored."
+                ),
+                severity=FindingSeverity.MEDIUM,
+                confidence=asset.confidence,
+                classification=FindingClassification.UNVERIFIED,
+                evidence=[_evidence(asset)],
+            ))
+    return out
+
+
 def _dns_hygiene_findings(
     target: str, dns_records: list[AssetOut]
 ) -> list[FindingCandidate]:
@@ -406,6 +456,7 @@ def derive_findings(target: str, assets: list[AssetOut]) -> list[FindingCandidat
     whois_assets = [a for a in assets if a.asset_type == "whois"]
     dns_records = [a for a in assets if a.asset_type == "dns_record"]
     email_assets = [a for a in assets if a.asset_type == "email_security"]
+    takeover_assets = [a for a in assets if a.asset_type == "takeover_candidate"]
 
     candidates: list[FindingCandidate] = []
     candidates += _sensitive_hostname_findings(hosts)
@@ -413,6 +464,7 @@ def derive_findings(target: str, assets: list[AssetOut]) -> list[FindingCandidat
     candidates += _email_auth_findings(target, dns_records)
     candidates += _email_posture_findings(target, email_assets, dns_records)
     candidates += _dns_hygiene_findings(target, dns_records)
+    candidates += _takeover_findings(takeover_assets)
     candidates += _surface_summary_finding(target, subdomains)
 
     order = {s: i for i, s in enumerate(

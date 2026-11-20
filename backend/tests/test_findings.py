@@ -41,6 +41,34 @@ def _by_type(cands, finding_type):
     return [c for c in cands if c.finding_type == finding_type]
 
 
+def _takeover(sub: str, *, service: str, dangling: bool) -> AssetOut:
+    return _asset("takeover_candidate", sub, confidence=0.85 if dangling else 0.6,
+                  sources=["dns"], attributes={
+                      "subdomain": sub, "service": service,
+                      "cname_target": f"x.{service.lower().replace(' ', '')}.io",
+                      "dangling": dangling})
+
+
+def test_takeover_dangling_is_high_confirmed():
+    cands = derive_findings(
+        "example.com", [_takeover("gone.example.com", service="GitHub Pages", dangling=True)])
+    found = _by_type(cands, "subdomain_takeover")
+    assert len(found) == 1
+    assert found[0].severity is FindingSeverity.HIGH
+    assert found[0].classification is FindingClassification.CONFIRMED
+    assert "gone.example.com" in found[0].title
+
+
+def test_takeover_live_delegation_is_medium_unverified():
+    cands = derive_findings(
+        "example.com", [_takeover("shop.example.com", service="Shopify", dangling=False)])
+    assert _by_type(cands, "subdomain_takeover") == []
+    review = _by_type(cands, "subdomain_delegation")
+    assert len(review) == 1
+    assert review[0].severity is FindingSeverity.MEDIUM
+    assert review[0].classification is FindingClassification.UNVERIFIED
+
+
 def _dns(record_type: str, data: str) -> AssetOut:
     return _asset("dns_record", f"{record_type} {data}",
                   attributes={"record_type": record_type, "data": data})
