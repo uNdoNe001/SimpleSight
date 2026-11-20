@@ -10,6 +10,7 @@ from __future__ import annotations
 from collectors.base import Collector
 from collectors.certificate_transparency import CertificateTransparencyCollector
 from collectors.dns_records import DNSRecordsCollector
+from collectors.email_security import EmailSecurityCollector
 from collectors.historical_records import HistoricalRecordsCollector
 from collectors.passive_dns import PassiveDnsCollector
 from collectors.tech_fingerprint import TechnologyFingerprintCollector
@@ -25,6 +26,7 @@ def default_collectors() -> list[Collector]:
         WhoisRdapCollector(),
         HistoricalRecordsCollector(),
         TechnologyFingerprintCollector(),
+        EmailSecurityCollector(),
     ]
 
 

@@ -226,6 +226,103 @@ def _email_auth_findings(
     ]
 
 
+def _email_posture_findings(
+    target: str, email_assets: list[AssetOut], dns_records: list[AssetOut]
+) -> list[FindingCandidate]:
+    """Flag gaps in published email-authentication posture (DMARC, DKIM, MTA-STS).
+
+    Only evaluated for mail-handling domains (MX observed), mirroring the SPF rule. Each
+    finding is grounded in the authoritative lookup the email-security collector performed:
+      - a *missing* mechanism rests on an absence, so it is UNVERIFIED (verify directly);
+      - a *present-but-weak* mechanism (DMARC p=none) rests on the actual record, so it is
+        CONFIRMED.
+    SPF is handled separately by `_email_auth_findings`.
+    """
+    if not dns_records or not email_assets:
+        return []
+    if not any(a.attributes.get("record_type") == "MX" for a in dns_records):
+        return []
+    mx_evidence = [
+        _evidence(a) for a in dns_records if a.attributes.get("record_type") == "MX"
+    ][:1]
+    by_mech = {a.attributes.get("mechanism"): a for a in email_assets}
+    out: list[FindingCandidate] = []
+
+    dmarc = by_mech.get("dmarc")
+    if dmarc is not None:
+        if not dmarc.attributes.get("present"):
+            out.append(FindingCandidate(
+                finding_key=f"email-dmarc-missing:{target}",
+                finding_type="missing_dmarc",
+                title=f"No DMARC policy published for mail-handling domain: {target}",
+                description=(
+                    f"'{target}' receives mail (MX present) but no DMARC record was found "
+                    f"at _dmarc.{target}. Without DMARC, receivers cannot tell the domain "
+                    f"owner how to handle spoofed mail, easing impersonation and phishing. "
+                    f"Inferred from the absence of a record — verify directly."
+                ),
+                severity=FindingSeverity.MEDIUM,
+                confidence=0.6,
+                classification=FindingClassification.UNVERIFIED,
+                evidence=[_evidence(dmarc), *mx_evidence],
+            ))
+        else:
+            policy = (dmarc.attributes.get("policy") or "").lower()
+            if policy in ("", "none"):
+                out.append(FindingCandidate(
+                    finding_key=f"email-dmarc-weak:{target}",
+                    finding_type="weak_dmarc",
+                    title=f"DMARC is monitor-only (p=none) for {target}",
+                    description=(
+                        f"'{target}' publishes DMARC but with policy 'p=none', which only "
+                        f"reports on spoofed mail and does not block it. Moving to "
+                        f"'quarantine' or 'reject' (after monitoring) enforces protection."
+                    ),
+                    severity=FindingSeverity.LOW,
+                    confidence=dmarc.confidence,
+                    classification=FindingClassification.CONFIRMED,
+                    evidence=[_evidence(dmarc)],
+                ))
+
+    mta = by_mech.get("mta_sts")
+    if mta is not None and not mta.attributes.get("present"):
+        out.append(FindingCandidate(
+            finding_key=f"email-mta-sts-missing:{target}",
+            finding_type="missing_mta_sts",
+            title=f"No MTA-STS policy published for {target}",
+            description=(
+                f"'{target}' receives mail but publishes no MTA-STS policy "
+                f"(_mta-sts.{target}). MTA-STS lets sending servers require TLS for "
+                f"inbound mail, reducing downgrade/interception risk. Inferred from "
+                f"absence — verify directly."
+            ),
+            severity=FindingSeverity.LOW,
+            confidence=0.6,
+            classification=FindingClassification.UNVERIFIED,
+            evidence=[_evidence(mta), *mx_evidence],
+        ))
+
+    dkim = by_mech.get("dkim")
+    if dkim is not None and not dkim.attributes.get("present"):
+        probed = dkim.attributes.get("selectors_probed", [])
+        out.append(FindingCandidate(
+            finding_key=f"email-dkim-none-observed:{target}",
+            finding_type="no_dkim_observed",
+            title=f"No DKIM selector observed for {target}",
+            description=(
+                f"None of {len(probed)} common DKIM selectors resolved for '{target}'. "
+                f"DKIM selectors are arbitrary, so this does not prove DKIM is unused — it "
+                f"only means no common selector was found. Confirm the domain's actual "
+                f"selector before acting."
+            ),
+            severity=FindingSeverity.INFO,
+            confidence=0.4,
+            classification=FindingClassification.UNVERIFIED,
+            evidence=[_evidence(dkim)],
+        ))
+    return out
+
+
 def _surface_summary_finding(
     target: str, subdomains: list[AssetOut]
 ) -> list[FindingCandidate]:
@@ -258,11 +355,13 @@ def derive_findings(target: str, assets: list[AssetOut]) -> list[FindingCandidat
     subdomains = [a for a in assets if a.asset_type == "subdomain"]
     whois_assets = [a for a in assets if a.asset_type == "whois"]
     dns_records = [a for a in assets if a.asset_type == "dns_record"]
+    email_assets = [a for a in assets if a.asset_type == "email_security"]
 
     candidates: list[FindingCandidate] = []
     candidates += _sensitive_hostname_findings(hosts)
     candidates += _registration_findings(whois_assets)
     candidates += _email_auth_findings(target, dns_records)
+    candidates += _email_posture_findings(target, email_assets, dns_records)
     candidates += _surface_summary_finding(target, subdomains)
 
     order = {s: i for i, s in enumerate(

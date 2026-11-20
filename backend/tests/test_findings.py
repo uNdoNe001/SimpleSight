@@ -41,6 +41,55 @@ def _by_type(cands, finding_type):
     return [c for c in cands if c.finding_type == finding_type]
 
 
+def _mx() -> AssetOut:
+    return _asset("dns_record", "MX 10 mail.example.com",
+                  attributes={"record_type": "MX", "data": "10 mail.example.com"})
+
+
+def _email(mechanism: str, *, present: bool, policy: str | None = None,
+           selectors_probed: int = 10) -> AssetOut:
+    attrs = {"mechanism": mechanism, "present": present}
+    if mechanism == "dmarc":
+        attrs["policy"] = policy
+    if mechanism == "dkim":
+        attrs["selectors_probed"] = list(range(selectors_probed))
+    return _asset("email_security", mechanism, confidence=0.9,
+                  sources=["dns"], attributes=attrs)
+
+
+def test_email_posture_flags_missing_dmarc_and_mta_sts():
+    assets = [_mx(), _email("dmarc", present=False),
+              _email("mta_sts", present=False), _email("dkim", present=True)]
+    cands = derive_findings("example.com", assets)
+    dmarc = _by_type(cands, "missing_dmarc")
+    assert len(dmarc) == 1
+    assert dmarc[0].severity is FindingSeverity.MEDIUM
+    assert dmarc[0].classification is FindingClassification.UNVERIFIED
+    assert len(_by_type(cands, "missing_mta_sts")) == 1
+    # DKIM present -> no "no_dkim_observed" finding
+    assert _by_type(cands, "no_dkim_observed") == []
+
+
+def test_email_posture_weak_dmarc_is_confirmed():
+    assets = [_mx(), _email("dmarc", present=True, policy="none")]
+    weak = _by_type(derive_findings("example.com", assets), "weak_dmarc")
+    assert len(weak) == 1
+    assert weak[0].severity is FindingSeverity.LOW
+    assert weak[0].classification is FindingClassification.CONFIRMED
+    # a strong policy produces no DMARC finding at all
+    strong = [_mx(), _email("dmarc", present=True, policy="reject")]
+    assert _by_type(derive_findings("example.com", strong), "weak_dmarc") == []
+    assert _by_type(derive_findings("example.com", strong), "missing_dmarc") == []
+
+
+def test_email_posture_requires_mx():
+    # No MX -> email-posture rules do not fire (parked/non-mail domain).
+    assets = [_email("dmarc", present=False), _email("mta_sts", present=False)]
+    cands = derive_findings("example.com", assets)
+    assert _by_type(cands, "missing_dmarc") == []
+    assert _by_type(cands, "missing_mta_sts") == []
+
+
 def test_sensitive_hostname_high_and_medium():
     assets = [
         _asset("subdomain", "admin.example.com"),
