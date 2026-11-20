@@ -144,3 +144,18 @@ while `AUTO_CREATE_TABLES=true` keeps `create_all` on startup for local dev. Pro
 are managed by the secrets manager (SMPLSGHT-11): a Fernet-encrypted per-tenant store with
 an env fallback, administered via `/api/secrets` (write-only; values are never returned).
 The dev encryption key in `.env.example` must be overridden in any real environment.
+
+## Phase 2 — Deeper Passive OSINT & Posture Findings (in progress)
+
+Epic **SMPLSGHT-42**. Same guardrails as the MVP: passive-only, authorization-gated,
+evidence-backed, nothing invented; every finding stays a deterministic rule over collected
+evidence with a confirmed-vs-unverified classification.
+
+| Story | Status | Notes |
+|---|---|---|
+| SMPLSGHT-43 Email-security posture collector | ✅ done | `collectors/email_security.py` — DMARC / MTA-STS / BIMI / DKIM via well-known DNS names; posture findings (missing DMARC, `p=none`, missing MTA-STS, no DKIM selector) gated on MX; 7th passive keyless collector |
+| SMPLSGHT-44 DNS hygiene (DNSSEC, CAA) | ⬜ todo | DNSSEC-disabled + no-CAA findings |
+| SMPLSGHT-45 Subdomain-takeover detection | ⬜ todo | dangling CNAME → vulnerable-service fingerprint (HIGH) |
+| SMPLSGHT-46 Cloud / storage exposure hints | ⬜ todo | bucket-style CNAMEs / SaaS tenants from DNS·CT |
+| SMPLSGHT-47 Certificate hygiene over CT data | ⬜ todo | expiry, wildcard sprawl, weak issuer |
+| SMPLSGHT-48 Exposure-score rollup | ⬜ todo | per-investigation posture score → dashboard + PDF |
