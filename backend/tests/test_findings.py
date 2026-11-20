@@ -41,6 +41,51 @@ def _by_type(cands, finding_type):
     return [c for c in cands if c.finding_type == finding_type]
 
 
+def _cert(*, issuer: str = "Let's Encrypt", common_name: str = "example.com",
+          not_before=None, not_after=None, cert_id: str = "1") -> AssetOut:
+    return _asset("certificate", cert_id, confidence=0.9, sources=["crt.sh (CT)"], attributes={
+        "issuer": issuer, "common_name": common_name,
+        "not_before": (not_before or NOW).isoformat(),
+        "not_after": (not_after or (NOW + timedelta(days=80))).isoformat()})
+
+
+def test_cert_over_long_validity_flagged():
+    assets = [_cert(not_before=NOW - timedelta(days=10), not_after=NOW + timedelta(days=500))]
+    found = _by_type(derive_findings("example.com", assets), "cert_long_validity")
+    assert len(found) == 1
+    assert found[0].severity is FindingSeverity.MEDIUM
+    assert found[0].classification is FindingClassification.CONFIRMED
+
+
+def test_cert_normal_validity_not_flagged():
+    assets = [_cert(not_before=NOW - timedelta(days=10), not_after=NOW + timedelta(days=80))]
+    assert _by_type(derive_findings("example.com", assets), "cert_long_validity") == []
+
+
+def test_cert_wildcard_flagged_low():
+    assets = [_cert(common_name="*.example.com")]
+    found = _by_type(derive_findings("example.com", assets), "cert_wildcard")
+    assert len(found) == 1
+    assert found[0].severity is FindingSeverity.LOW
+
+
+def test_cert_distrusted_issuer_flagged_high():
+    assets = [_cert(issuer="Symantec Class 3 EV SSL CA")]
+    found = _by_type(derive_findings("example.com", assets), "cert_distrusted_issuer")
+    assert len(found) == 1
+    assert found[0].severity is FindingSeverity.HIGH
+
+
+def test_expired_certs_are_ignored_for_hygiene():
+    # Long-expired historical cert with a huge validity + wildcard + bad issuer: still silent.
+    assets = [_cert(issuer="Symantec", common_name="*.example.com",
+                    not_before=NOW - timedelta(days=1000), not_after=NOW - timedelta(days=100))]
+    cands = derive_findings("example.com", assets)
+    assert _by_type(cands, "cert_long_validity") == []
+    assert _by_type(cands, "cert_wildcard") == []
+    assert _by_type(cands, "cert_distrusted_issuer") == []
+
+
 def test_cloud_storage_exposure_from_cname_target():
     # An S3 bucket referenced via a subdomain CNAME target is flagged.
     assets = [_asset("takeover_candidate", "assets.example.com", sources=["dns"], attributes={

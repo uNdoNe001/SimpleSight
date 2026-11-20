@@ -362,6 +362,98 @@ def _cloud_exposure_findings(
     return out
 
 
+#: Certificate authorities whose roots have been distrusted by major browsers.
+_DISTRUSTED_ISSUERS = (
+    "symantec", "thawte", "geotrust", "rapidssl", "startcom", "startssl", "wosign",
+)
+#: CA/Browser-Forum maximum certificate validity (days) for current certificates.
+_MAX_CERT_VALIDITY_DAYS = 398
+
+
+def _certificate_hygiene_findings(
+    target: str, cert_assets: list[AssetOut]
+) -> list[FindingCandidate]:
+    """Hygiene findings mined from already-collected CT data — no new collection.
+
+    Only *currently-valid* certificates are considered: CT logs are full of long-expired
+    historical certs, so judging those would be pure noise. Over the valid set we flag an
+    over-long validity period (CA/B limit is 398 days), wildcard certificates (broad blast
+    radius), and distrusted issuers. All rest on the actual certificate record, so CONFIRMED.
+    """
+    now = datetime.now(UTC)
+    valid: list[tuple[AssetOut, datetime | None, datetime]] = []
+    for c in cert_assets:
+        not_after = _parse_date(c.attributes.get("not_after"))
+        if not_after is None or not_after < now:
+            continue  # expired or unparseable -> not a current-exposure signal
+        valid.append((c, _parse_date(c.attributes.get("not_before")), not_after))
+    if not valid:
+        return []
+
+    out: list[FindingCandidate] = []
+
+    long_certs = [(c, nb, na) for (c, nb, na) in valid
+                  if nb and (na - nb).days > _MAX_CERT_VALIDITY_DAYS]
+    if long_certs:
+        worst, nb, na = max(long_certs, key=lambda t: (t[2] - t[1]).days)
+        days = (na - nb).days
+        out.append(FindingCandidate(
+            finding_key=f"cert-long-validity:{target}",
+            finding_type="cert_long_validity",
+            title=f"Currently-valid certificate exceeds the 398-day validity limit ({days}d)",
+            description=(
+                f"A certificate valid until {na.date().isoformat()} has a {days}-day validity "
+                f"period, beyond the CA/Browser-Forum maximum of {_MAX_CERT_VALIDITY_DAYS} "
+                f"days. Over-long certificates prolong exposure if a key is compromised and "
+                f"may indicate an outdated issuance process."
+            ),
+            severity=FindingSeverity.MEDIUM,
+            confidence=0.9,
+            classification=FindingClassification.CONFIRMED,
+            evidence=[_evidence(worst)],
+        ))
+
+    wildcard = [c for (c, _nb, _na) in valid
+                if str(c.attributes.get("common_name") or "").startswith("*.")]
+    if wildcard:
+        names = sorted({str(c.attributes.get("common_name")) for c in wildcard})[:5]
+        out.append(FindingCandidate(
+            finding_key=f"cert-wildcard:{target}",
+            finding_type="cert_wildcard",
+            title=f"Wildcard certificate(s) in use for {target}",
+            description=(
+                f"{len(wildcard)} currently-valid wildcard certificate(s) were observed "
+                f"({', '.join(names)}). A wildcard's private key secures every host under the "
+                f"domain, so a single compromise has a broad blast radius. Prefer scoped "
+                f"certificates for sensitive hosts."
+            ),
+            severity=FindingSeverity.LOW,
+            confidence=0.9,
+            classification=FindingClassification.CONFIRMED,
+            evidence=[_evidence(c) for c in wildcard[:5]],
+        ))
+
+    for c, _nb, _na in valid:
+        issuer = str(c.attributes.get("issuer") or "").lower()
+        if any(bad in issuer for bad in _DISTRUSTED_ISSUERS):
+            out.append(FindingCandidate(
+                finding_key=f"cert-distrusted-issuer:{target}",
+                finding_type="cert_distrusted_issuer",
+                title=f"Certificate from a distrusted issuer for {target}",
+                description=(
+                    f"A currently-valid certificate was issued by '{c.attributes.get('issuer')}', "
+                    f"a CA whose roots have been distrusted by major browsers. Such "
+                    f"certificates trigger errors and must be replaced by a trusted CA."
+                ),
+                severity=FindingSeverity.HIGH,
+                confidence=0.9,
+                classification=FindingClassification.CONFIRMED,
+                evidence=[_evidence(c)],
+            ))
+            break
+    return out
+
+
 def _dns_hygiene_findings(
     target: str, dns_records: list[AssetOut]
 ) -> list[FindingCandidate]:
@@ -552,6 +644,8 @@ def derive_findings(target: str, assets: list[AssetOut]) -> list[FindingCandidat
     candidates += _dns_hygiene_findings(target, dns_records)
     candidates += _takeover_findings(takeover_assets)
     candidates += _cloud_exposure_findings(target, assets)
+    candidates += _certificate_hygiene_findings(
+        target, [a for a in assets if a.asset_type == "certificate"])
     candidates += _surface_summary_finding(target, subdomains)
 
     order = {s: i for i, s in enumerate(
