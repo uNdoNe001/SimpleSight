@@ -31,6 +31,7 @@ def _fmt(ts: str) -> str:
 
 class HistoricalRecordsCollector(Collector):
     name = "historical_records"
+    description = "Enumerates historical URLs from public web archives (Wayback CDX)."
     required_keys = ()  # Wayback CDX is keyless
     passive = True
 

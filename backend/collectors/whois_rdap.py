@@ -43,6 +43,7 @@ def _events(events: list[dict]) -> dict[str, str]:
 
 class WhoisRdapCollector(Collector):
     name = "whois_rdap"
+    description = "Looks up domain registration via RDAP (registrar, key dates, nameservers)."
     required_keys = ()  # rdap.org is keyless
     passive = True
 

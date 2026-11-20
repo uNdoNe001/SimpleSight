@@ -75,6 +75,28 @@ class FindingStatusUpdate(BaseModel):
     status: str = Field(pattern="^(open|triaged|dismissed)$")
 
 
+# --- discovery plan --------------------------------------------------------------------
+
+class PlanStepOut(BaseModel):
+    collector: str
+    description: str
+    passive: bool
+    required_keys: list[str]
+    enabled: bool
+    skip_reason: str | None = None
+
+
+class DiscoveryPlanOut(BaseModel):
+    """Preview of planned collection for an investigation (SMPLSGHT-16)."""
+
+    target: str | None
+    additional_targets: list[str]
+    passive_only: bool
+    enabled_count: int
+    skipped_count: int
+    steps: list[PlanStepOut]
+
+
 # --- secrets (provider keys) -----------------------------------------------------------
 
 class SecretSetRequest(BaseModel):

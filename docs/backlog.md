@@ -132,7 +132,7 @@ a digital-footprint summary, and a methodology/limitations section, downloadable
 | SMPLSGHT-39 Exec report template | ✅ done | ReportLab Platypus template (`app/services/report.py`) |
 | SMPLSGHT-40 Server-side PDF generation | ✅ done | `build_report_pdf()` → PDF bytes; pure/offline-testable |
 | SMPLSGHT-41 Report download from UI | ✅ done | `GET /investigations/{id}/report.pdf`; authed blob download button |
-| SMPLSGHT-16 Discovery-plan generation | ⬜ not started | — |
+| SMPLSGHT-16 Discovery-plan generation | ✅ done | `GET /investigations/{id}/plan` previews targets + collectors + skip reasons (`app/services/discovery.py`); shown in UI |
 | SMPLSGHT-11 Secrets management | ✅ done | Fernet-encrypted tenant secret store + env fallback; admin API (`app/services/secrets.py`, `app/api/secrets.py`); resolved into collector config at run time |
 | SMPLSGHT-18 Job queue | ✅ done | RQ worker; `/run` returns 202, `QUEUE_EAGER` for dev |
 

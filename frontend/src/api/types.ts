@@ -61,6 +61,24 @@ export interface Finding {
   updated_at: string;
 }
 
+export interface PlanStep {
+  collector: string;
+  description: string;
+  passive: boolean;
+  required_keys: string[];
+  enabled: boolean;
+  skip_reason: string | null;
+}
+
+export interface DiscoveryPlan {
+  target: string | null;
+  additional_targets: string[];
+  passive_only: boolean;
+  enabled_count: number;
+  skipped_count: number;
+  steps: PlanStep[];
+}
+
 export type InvestigationStatus = "draft" | "running" | "complete" | "partial" | "failed" | "success";
 
 export interface Investigation {

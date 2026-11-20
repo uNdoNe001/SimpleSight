@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
-import type { Asset, Finding, Investigation } from "../api/types";
+import type { Asset, DiscoveryPlan, Finding, Investigation } from "../api/types";
 import { StatusBadge } from "../components/Layout";
 import { FindingsSection } from "../components/FindingsSection";
 import { useAuth } from "../auth/AuthContext";
@@ -22,10 +22,16 @@ export function InvestigationPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [minConf, setMinConf] = useState(0);
 
+  const [plan, setPlan] = useState<DiscoveryPlan | null>(null);
+
   function load() {
     if (id) api.get<Investigation>(`/investigations/${id}`).then(setInv).catch(() => {});
   }
   useEffect(load, [id]);
+
+  useEffect(() => {
+    if (id) api.get<DiscoveryPlan>(`/investigations/${id}/plan`).then(setPlan).catch(() => {});
+  }, [id]);
 
   // poll for updates while a run is in progress
   useEffect(() => {
@@ -152,6 +158,44 @@ export function InvestigationPage() {
         )}
         {inv.status === "running" && <p className="muted" style={{ marginTop: "1rem" }}>Collection running… this page updates automatically.</p>}
       </div>
+
+      {plan && (
+        <>
+          <h2>
+            Planned collection{" "}
+            {plan.passive_only && <span className="badge success">passive</span>}
+          </h2>
+          <div className="card">
+            <p className="muted" style={{ marginTop: 0 }}>
+              {plan.enabled_count} of {plan.steps.length} collectors will run against{" "}
+              <span className="mono">{plan.target ?? "—"}</span>
+              {plan.additional_targets.length > 0 &&
+                ` (+${plan.additional_targets.length} more domain${plan.additional_targets.length > 1 ? "s" : ""})`}
+              {plan.skipped_count > 0 && ` · ${plan.skipped_count} skipped`}.
+            </p>
+            <table>
+              <thead>
+                <tr><th>Collector</th><th>What it does</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {plan.steps.map((s) => (
+                  <tr key={s.collector}>
+                    <td className="mono">{s.collector}</td>
+                    <td className="muted">{s.description}</td>
+                    <td>
+                      {s.enabled ? (
+                        <span className="badge success">enabled</span>
+                      ) : (
+                        <span className="badge draft" title={s.skip_reason ?? ""}>skipped</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       <FindingsSection findings={findings} canWrite={canWrite} onChanged={load} />
 

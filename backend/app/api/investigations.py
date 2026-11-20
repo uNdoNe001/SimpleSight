@@ -25,11 +25,15 @@ from app.models import Investigation, InvestigationStatus, Organization, User
 from app.queue import enqueue_investigation_run
 from app.schemas import (
     AuthorizationAttestation,
+    DiscoveryPlanOut,
     InvestigationCreate,
     InvestigationDetailOut,
     InvestigationOut,
 )
 from app.services.audit import record_audit
+from app.services.discovery import build_discovery_plan
+from app.services.secrets import list_secrets
+from collectors.registry import default_collectors, required_secret_names
 
 router = APIRouter(prefix="/api/investigations", tags=["investigations"])
 
@@ -130,6 +134,36 @@ def list_investigations(
 ) -> list[Investigation]:
     return list(
         db.scalars(select(Investigation).where(Investigation.tenant_id == user.tenant_id))
+    )
+
+
+@router.get("/{inv_id}/plan", response_model=DiscoveryPlanOut)
+def get_discovery_plan(
+    inv_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DiscoveryPlanOut:
+    """Preview the planned collection (SMPLSGHT-16): targets, collectors, and which will be
+    skipped for an unconfigured provider key. Available in any state, including draft."""
+    inv = _get_owned(db, inv_id, user.tenant_id)
+    org = db.get(Organization, inv.organization_id)
+    configured = {
+        s.name for s in list_secrets(db, user.tenant_id, required_secret_names())
+        if s.configured
+    }
+    plan = build_discovery_plan(
+        target=org.primary_domain if org else None,
+        additional_targets=list(org.additional_domains) if org and org.additional_domains else [],
+        collectors=default_collectors(),
+        configured_keys=configured,
+    )
+    return DiscoveryPlanOut(
+        target=plan.target,
+        additional_targets=plan.additional_targets,
+        passive_only=plan.passive_only,
+        enabled_count=plan.enabled_count,
+        skipped_count=plan.skipped_count,
+        steps=[s.__dict__ for s in plan.steps],
     )
 
 

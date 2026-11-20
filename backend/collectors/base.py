@@ -87,6 +87,9 @@ class Collector(ABC):
     #: stable identifier, e.g. "certificate_transparency"
     name: str = "collector"
 
+    #: one-line, human-readable summary of what this collector does (for discovery plans)
+    description: str = ""
+
     #: config keys this collector needs; if any are missing the run is SKIPPED
     required_keys: tuple[str, ...] = ()
 

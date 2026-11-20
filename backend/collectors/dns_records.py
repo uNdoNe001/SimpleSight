@@ -23,6 +23,7 @@ RECORD_TYPES = ("A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA")
 
 class DNSRecordsCollector(Collector):
     name = "dns_records"
+    description = "Resolves standard DNS records (A, AAAA, MX, NS, TXT, CNAME, SOA)."
     required_keys = ()  # keyless
     passive = True
 

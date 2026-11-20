@@ -37,6 +37,7 @@ def _clean_host(raw: str, apex: str) -> str | None:
 
 class CertificateTransparencyCollector(Collector):
     name = "certificate_transparency"
+    description = "Queries public Certificate Transparency logs (crt.sh) for certs and SAN hostnames."
     required_keys = ()  # crt.sh is keyless
     passive = True
 
