@@ -138,8 +138,9 @@ a digital-footprint summary, and a methodology/limitations section, downloadable
 | SMPLSGHT-11 Secrets management | ✅ done | Fernet-encrypted tenant secret store + env fallback; admin API (`app/services/secrets.py`, `app/api/secrets.py`); resolved into collector config at run time |
 | SMPLSGHT-18 Job queue | ✅ done | RQ worker; `/run` returns 202, `QUEUE_EAGER` for dev |
 
-**Known MVP shortcuts** (tracked, not hidden): tables are created via
-`Base.metadata.create_all()` on startup — Alembic migrations are a follow-up. Provider keys
+**Known MVP shortcuts** (tracked, not hidden): schema is now managed with **Alembic**
+(`migrations/`, initial revision checked in); `alembic upgrade head` is the production path,
+while `AUTO_CREATE_TABLES=true` keeps `create_all` on startup for local dev. Provider keys
 are managed by the secrets manager (SMPLSGHT-11): a Fernet-encrypted per-tenant store with
 an env fallback, administered via `/api/secrets` (write-only; values are never returned).
 The dev encryption key in `.env.example` must be overridden in any real environment.

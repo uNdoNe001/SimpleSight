@@ -19,8 +19,10 @@ from app.db import init_db
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # MVP: create tables on startup. Replace with Alembic migrations before production.
-    init_db()
+    # Dev convenience only. In production, AUTO_CREATE_TABLES=false and the schema is
+    # managed with Alembic (`alembic upgrade head`); see migrations/.
+    if settings.auto_create_tables:
+        init_db()
     yield
 
 

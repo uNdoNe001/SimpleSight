@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+psycopg2://simplesight:simplesight@localhost:5432/simplesight"
     )
+    # Dev convenience: create tables on startup. Set false in production and manage the
+    # schema with Alembic (`alembic upgrade head`) instead.
+    auto_create_tables: bool = True
     redis_url: str = "redis://localhost:6379/0"
 
     # Auth / JWT. Override JWT_SECRET in every real environment.

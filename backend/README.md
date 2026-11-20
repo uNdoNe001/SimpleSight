@@ -27,6 +27,23 @@ uvicorn app.main:app --reload
 
 Then `GET http://localhost:8000/health`.
 
+## Database schema
+
+The schema is managed with **Alembic** (`migrations/`). In production, apply migrations:
+
+```bash
+alembic upgrade head          # reads DATABASE_URL from the environment / .env
+```
+
+After changing a model, autogenerate a revision and review it before committing:
+
+```bash
+alembic revision --autogenerate -m "describe the change"
+```
+
+For local dev, `AUTO_CREATE_TABLES=true` (the default) creates tables on startup so you can
+skip migrations while iterating; set it to `false` to rely solely on Alembic.
+
 ## Background worker
 
 Collection runs on an RQ worker (SMPLSGHT-18), not in the request. Start Redis (via the
