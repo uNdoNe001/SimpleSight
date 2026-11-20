@@ -154,8 +154,14 @@ evidence with a confirmed-vs-unverified classification.
 | Story | Status | Notes |
 |---|---|---|
 | SMPLSGHT-43 Email-security posture collector | ✅ done | `collectors/email_security.py` — DMARC / MTA-STS / BIMI / DKIM via well-known DNS names; posture findings (missing DMARC, `p=none`, missing MTA-STS, no DKIM selector) gated on MX; 7th passive keyless collector |
-| SMPLSGHT-44 DNS hygiene (DNSSEC, CAA) | ⬜ todo | DNSSEC-disabled + no-CAA findings |
-| SMPLSGHT-45 Subdomain-takeover detection | ⬜ todo | dangling CNAME → vulnerable-service fingerprint (HIGH) |
-| SMPLSGHT-46 Cloud / storage exposure hints | ⬜ todo | bucket-style CNAMEs / SaaS tenants from DNS·CT |
-| SMPLSGHT-47 Certificate hygiene over CT data | ⬜ todo | expiry, wildcard sprawl, weak issuer |
-| SMPLSGHT-48 Exposure-score rollup | ⬜ todo | per-investigation posture score → dashboard + PDF |
+| SMPLSGHT-44 DNS hygiene (DNSSEC, CAA) | ✅ done | DNS collector resolves CAA + DNSKEY; `missing_caa` / `missing_dnssec` findings |
+| SMPLSGHT-45 Subdomain-takeover detection | ✅ done | dependent 2nd pipeline stage; `collectors/subdomain_takeover.py` CNAME → dangling-service fingerprint; HIGH (dangling) / MEDIUM (live delegation) findings; `takeover_detection_enabled` flag |
+| SMPLSGHT-46 Cloud / storage exposure hints | ✅ done | pure rule over collected assets — `cloud_storage_exposure` (S3/Blob/GCS/R2/Spaces/B2) + `third_party_footprint` summary |
+| SMPLSGHT-47 Certificate hygiene over CT data | ✅ done | currently-valid certs only — over-long validity (>398d), wildcard use, distrusted issuer |
+| SMPLSGHT-48 Exposure-score rollup | ✅ done | `app/services/scoring.py` 0–100 score + grade A–F; API `exposure_score`, PDF block, UI card |
+
+**Phase 2 complete (2026-11-20):** epic SMPLSGHT-42 + all 6 stories Done. Collector registry
+now has 7 primary passive keyless collectors plus a dependent subdomain-takeover enrichment
+stage. Findings engine grew from 4 rules to 13 (email posture, DNS hygiene, takeover, cloud
+exposure, certificate hygiene) and every investigation now carries an exposure score. 122
+backend tests pass (ruff clean); frontend builds clean.
