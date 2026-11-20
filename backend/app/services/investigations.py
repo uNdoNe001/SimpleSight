@@ -81,6 +81,7 @@ def run_and_persist(db: Session, investigation: Investigation, actor_user_id: st
             "outcome": result.overall_outcome,
             "asset_count": result.asset_count,
             "finding_count": len(candidates),
+            "provider_usage": result.provider_usage,
             "collectors": [c.model_dump() for c in result.collectors],
         },
     )

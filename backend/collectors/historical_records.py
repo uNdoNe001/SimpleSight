@@ -40,6 +40,7 @@ class HistoricalRecordsCollector(Collector):
 
     def collect(self, context: CollectionContext) -> CollectorRun:
         domain = context.target.strip().lower().rstrip(".")
+        context.throttle("wayback")
         resp = self._client.get(
             CDX_URL,
             params={"url": domain, "output": "json", "fl": "timestamp",

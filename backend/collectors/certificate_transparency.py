@@ -46,6 +46,7 @@ class CertificateTransparencyCollector(Collector):
 
     def collect(self, context: CollectionContext) -> CollectorRun:
         apex = context.target.strip().lower().rstrip(".")
+        context.throttle("crt.sh")
         resp = self._client.get(CRT_SH_URL, params={"q": f"%.{apex}", "output": "json"})
         resp.raise_for_status()
         entries = resp.json()  # list of cert records

@@ -54,6 +54,7 @@ class WhoisRdapCollector(Collector):
 
     def collect(self, context: CollectionContext) -> CollectorRun:
         domain = context.target.strip().lower().rstrip(".")
+        context.throttle("rdap")
         resp = self._client.get(f"{RDAP_URL}{domain}")
         if resp.status_code == 404:
             return CollectorRun(outcome=CollectorOutcome.SUCCESS, results=[],

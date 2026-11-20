@@ -115,6 +115,7 @@ a digital-footprint summary, and a methodology/limitations section, downloadable
 | SMPLSGHT-19 Collector adapter interface | ✅ done | `collectors/base.py` |
 | SMPLSGHT-21 Provenance envelope | ✅ done | `Provenance` on every result |
 | SMPLSGHT-28 Partial/failure reporting | ✅ done | `collectors/runner.py` outcome roll-up |
+| SMPLSGHT-20 Rate limiting + usage accounting | ✅ done | token-bucket per provider (`app/services/ratelimit.py`), collectors throttle, usage in run audit |
 | SMPLSGHT-23 DNS records collector | ✅ done | `collectors/dns_records.py` |
 | SMPLSGHT-25 Certificate transparency collector | ✅ done | crt.sh |
 | SMPLSGHT-22 WHOIS / registration collector | ✅ done | RDAP (`collectors/whois_rdap.py`) |

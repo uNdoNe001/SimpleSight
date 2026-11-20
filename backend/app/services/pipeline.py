@@ -8,8 +8,10 @@ this call in the request flow.
 
 from __future__ import annotations
 
+from app.core.config import settings
 from app.schemas import CollectorRunOut, RunInvestigationResponse
 from app.services.assets import normalize_and_dedup
+from app.services.ratelimit import NullRateLimiter, RateLimiter
 from collectors.base import CollectionContext, Collector
 from collectors.registry import default_collectors
 from collectors.runner import overall_outcome, run_collectors
@@ -19,13 +21,20 @@ def run_investigation(
     domain: str,
     collectors: list[Collector] | None = None,
     config: dict | None = None,
+    rate_limiter: object | None = None,
 ) -> RunInvestigationResponse:
     """Run the collectors against `domain`.
 
     `config` carries resolved provider keys/limits into each collector's context
     (SMPLSGHT-11): a collector whose `required_keys` are absent here is SKIPPED, not failed.
+    A per-provider rate limiter (SMPLSGHT-20) throttles external calls and tallies usage.
     """
-    context = CollectionContext(target=domain.strip().lower().rstrip("."), config=config or {})
+    limiter = rate_limiter or (RateLimiter() if settings.rate_limit_enabled else NullRateLimiter())
+    context = CollectionContext(
+        target=domain.strip().lower().rstrip("."),
+        config=config or {},
+        rate_limiter=limiter,
+    )
     runs = run_collectors(collectors or default_collectors(), context)
     assets = normalize_and_dedup(runs)
 
@@ -45,4 +54,5 @@ def run_investigation(
         collectors=collector_outs,
         asset_count=len(assets),
         assets=assets,
+        provider_usage=limiter.usage() if hasattr(limiter, "usage") else {},
     )

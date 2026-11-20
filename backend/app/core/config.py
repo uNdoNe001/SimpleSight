@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     collection_queue: str = "collection"
     queue_eager: bool = False
 
+    # Per-provider rate limiting (SMPLSGHT-20). Disable only for local experiments.
+    rate_limit_enabled: bool = True
+
     # Secrets-at-rest encryption (Fernet key: url-safe base64, 32 bytes).
     # This dev default is intentionally weak and must be overridden in every real
     # environment — rotating it makes existing stored secrets undecryptable.

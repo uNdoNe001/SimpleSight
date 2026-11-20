@@ -74,6 +74,16 @@ class CollectionContext:
     target: str                      # e.g. a domain
     scope: dict[str, Any] = field(default_factory=dict)
     config: dict[str, Any] = field(default_factory=dict)  # provider keys, limits
+    #: optional per-provider rate limiter (SMPLSGHT-20); None = no throttling
+    rate_limiter: Any = None
+
+    def throttle(self, provider: str) -> None:
+        """Block as needed to respect `provider`'s rate limit, and count the call.
+
+        A no-op when no limiter is attached, so collectors can call it unconditionally.
+        """
+        if self.rate_limiter is not None:
+            self.rate_limiter.acquire(provider)
 
 
 class Collector(ABC):

@@ -35,6 +35,7 @@ class DNSRecordsCollector(Collector):
         errors: list[str] = []
 
         for rtype in RECORD_TYPES:
+            context.throttle("dns")
             try:
                 answer = self._resolver.resolve(context.target, rtype)
             except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):

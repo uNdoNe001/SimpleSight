@@ -48,6 +48,7 @@ class RunInvestigationResponse(BaseModel):
     collectors: list[CollectorRunOut]
     asset_count: int
     assets: list[AssetOut]
+    provider_usage: dict[str, int] = Field(default_factory=dict)
 
 
 # --- findings --------------------------------------------------------------------------
