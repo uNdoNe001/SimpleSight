@@ -12,8 +12,9 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from app.models import Asset, Investigation, InvestigationStatus, Organization
+from app.models import Asset, ChangeEvent, Investigation, InvestigationStatus, Organization
 from app.services.audit import record_audit
+from app.services.changes import diff_runs, snapshot_from_orm
 from app.services.findings import derive_findings, persist_findings
 from app.services.pipeline import run_investigation as run_pipeline
 from app.services.secrets import resolve_many
@@ -34,6 +35,12 @@ def run_and_persist(db: Session, investigation: Investigation, actor_user_id: st
     target = (org.primary_domain if org else None) or ""
     if not target:
         raise ValueError("organization has no primary domain to investigate")
+
+    # Snapshot the prior run before we clear it, so we can diff what changed (SMPLSGHT-50).
+    # Only a genuine re-run (one that already completed once) produces change events; the
+    # first run is the baseline, not a set of "new" everything.
+    had_prior_run = investigation.completed_at is not None
+    prev_snapshot = snapshot_from_orm(investigation)
 
     investigation.status = InvestigationStatus.RUNNING.value
     investigation.started_at = datetime.now(UTC)
@@ -66,9 +73,32 @@ def run_and_persist(db: Session, investigation: Investigation, actor_user_id: st
     # collected evidence — nothing is invented — with analyst triage preserved across re-runs.
     candidates = derive_findings(target, result.assets)
     persist_findings(db, investigation, candidates)
+    db.flush()
+
+    # Diff the fresh run against the prior snapshot and record change events (SMPLSGHT-50).
+    run_at = datetime.now(UTC)
+    change_count = 0
+    if had_prior_run:
+        events = diff_runs(prev_snapshot, snapshot_from_orm(investigation))
+        change_count = len(events)
+        for ev in events:
+            db.add(
+                ChangeEvent(
+                    tenant_id=investigation.tenant_id,
+                    investigation_id=investigation.id,
+                    organization_id=investigation.organization_id,
+                    change_type=ev.change_type,
+                    entity_type=ev.entity_type,
+                    entity_key=ev.entity_key,
+                    title=ev.title,
+                    severity=ev.severity,
+                    detail=ev.detail,
+                    run_at=run_at,
+                )
+            )
 
     investigation.status = result.overall_outcome  # success | partial | failed
-    investigation.completed_at = datetime.now(UTC)
+    investigation.completed_at = run_at
 
     record_audit(
         db,
@@ -81,6 +111,7 @@ def run_and_persist(db: Session, investigation: Investigation, actor_user_id: st
             "outcome": result.overall_outcome,
             "asset_count": result.asset_count,
             "finding_count": len(candidates),
+            "change_count": change_count,
             "provider_usage": result.provider_usage,
             "collectors": [c.model_dump() for c in result.collectors],
         },

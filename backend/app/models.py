@@ -189,6 +189,49 @@ class Finding(Base):
     investigation: Mapped[Investigation] = relationship(back_populates="findings")
 
 
+class ChangeType(str, Enum):
+    """A difference between an investigation's previous run and its latest run (SMPLSGHT-50)."""
+
+    ASSET_ADDED = "asset_added"
+    ASSET_REMOVED = "asset_removed"
+    FINDING_APPEARED = "finding_appeared"
+    FINDING_RESOLVED = "finding_resolved"
+    FINDING_SEVERITY_CHANGED = "finding_severity_changed"
+
+
+class ChangeEvent(Base):
+    """An append-only record of what changed between two runs of an investigation.
+
+    Produced deterministically by diffing the prior run's assets/findings against the fresh
+    run (`app/services/changes.py`) — never invented. Events from one re-run share `run_at`,
+    which lets the API group "what changed in the latest run". Material changes (a new
+    high/critical finding) seed alerts (SMPLSGHT-53); `acknowledged_at` carries analyst
+    acknowledgement forward like finding triage.
+    """
+
+    __tablename__ = "change_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(String(36), ForeignKey("tenants.id"), index=True)
+    investigation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("investigations.id"), index=True
+    )
+    organization_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("organizations.id"), index=True
+    )
+    change_type: Mapped[str] = mapped_column(String(40), index=True)
+    entity_type: Mapped[str] = mapped_column(String(20))  # "asset" | "finding"
+    entity_key: Mapped[str] = mapped_column(String(512), index=True)
+    title: Mapped[str] = mapped_column(String(512), default="")
+    severity: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    detail: Mapped[dict] = mapped_column(JSON, default=dict)
+    run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, default=_now)
+    acknowledged_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class TenantSecret(Base):
     """A provider API key (or similar secret) scoped to a tenant (SMPLSGHT-11).
 
