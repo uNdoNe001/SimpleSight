@@ -182,4 +182,26 @@ diffs/rules over stored runs, never invented.
 **Phase 3 complete (2026-11-24):** epic SMPLSGHT-49 + all 4 stories Done (0 open on board).
 Re-runs now record a diff of what appeared/resolved/changed, investigations can be marked for
 periodic re-collection, and material changes raise acknowledge-able alerts. 145 backend tests
-pass (ruff clean); frontend builds clean. Phase 4 remains off the board.
+pass (ruff clean); frontend builds clean.
+
+## Phase 4 — Notifications, AI Narrative & Hardening
+
+Epic **SMPLSGHT-54**. Closes the monitoring loop (outbound + scheduled), adds a grounded AI
+narrative, and hardens the platform. Same guardrails — the AI narrative summarizes only the
+deterministically-derived findings, never inventing.
+
+| Story | Status | Notes |
+|---|---|---|
+| SMPLSGHT-55 CI pipeline | ✅ done | `.github/workflows/ci.yml` — backend ruff + offline pytest, frontend tsc + vite build on push/PR; deps cached; README badge |
+| SMPLSGHT-56 Notification channels + delivery | ✅ done | per-tenant webhook channels (`notification_channels`, write-only HMAC secret); material alerts delivered as signed JSON on re-run via pluggable transport; admin CRUD + `/test`; migration `c3d4e5f6a7b8` |
+| SMPLSGHT-57 Scheduled monitoring tick | ✅ done | shared `enqueue_due()`; `workers/monitor_tick.py` cron entrypoint ticking across tenants, idempotent |
+| SMPLSGHT-58 Grounded AI narrative | ✅ done | `app/services/narrative.py` — deterministic `TemplateNarrator` (default, in PDF) + optional `ClaudeNarrator` (opt-in via configured key, forbids invention, falls back); `GET /investigations/{id}/narrative` |
+| SMPLSGHT-59 Secrets admin UI | ✅ done | admin "Provider keys" page over `/api/secrets` (set/rotate/remove, never shows values); also surfaces the Claude narrative key |
+| SMPLSGHT-60 Redis-backed rate limiter | ✅ done | `RedisRateLimiter` atomic Lua token-bucket shared across workers; `build_rate_limiter()` picks backend from settings; in-memory stays default/test path |
+
+**Phase 4 complete (2026-11-25):** epic SMPLSGHT-54 + all 6 stories Done (0 open on board).
+CI is green on every push; alerts now deliver to webhooks; a cron tick re-runs due monitored
+investigations; reports carry a grounded narrative (optionally model-written); admins manage
+provider keys and the Claude key from the UI; the rate limiter can share state across workers.
+166 backend tests pass (ruff clean); frontend builds clean. Backlog now spans 60 issues across
+4 phases, all Done.
