@@ -165,3 +165,21 @@ now has 7 primary passive keyless collectors plus a dependent subdomain-takeover
 stage. Findings engine grew from 4 rules to 13 (email posture, DNS hygiene, takeover, cloud
 exposure, certificate hygiene) and every investigation now carries an exposure score. 122
 backend tests pass (ruff clean); frontend builds clean.
+
+## Phase 3 — Continuous Monitoring & Change Detection
+
+Epic **SMPLSGHT-49**. Turns one-shot investigations into a monitored footprint. Same
+guardrails: passive-only, authorization-gated, deterministic — change events and alerts are
+diffs/rules over stored runs, never invented.
+
+| Story | Status | Notes |
+|---|---|---|
+| SMPLSGHT-50 Change-detection engine + model | ✅ done | `ChangeEvent` model + pure `diff_runs()` (asset added/removed, finding appeared/resolved/severity-changed); snapshot prior run before clear, diff fresh run; first run is baseline. Migration `a1f2c3d4e5f6` |
+| SMPLSGHT-51 Changes API + timeline | ✅ done | `GET /investigations/{id}/changes` (`?latest=true`); frontend `ChangesSection` grouped "What changed" timeline |
+| SMPLSGHT-52 Monitoring schedule / due-run | ✅ done | monitored flag + hourly/daily/weekly cadence; `due_investigations()`; `PATCH /investigations/{id}/monitoring`, `GET /monitoring/due`, `POST /monitoring/run-due`; `settings.monitoring_enabled` gate; migration `b2c3d4e5f6a7`; UI toggle |
+| SMPLSGHT-53 Alerting on material changes | ✅ done | alerts = material change events (new high/critical finding or escalation) via `is_material()`; `GET /investigations/{id}/alerts`, `POST /alerts/{id}/acknowledge`, `GET /alerts/summary`; UI alert banner |
+
+**Phase 3 complete (2026-11-24):** epic SMPLSGHT-49 + all 4 stories Done (0 open on board).
+Re-runs now record a diff of what appeared/resolved/changed, investigations can be marked for
+periodic re-collection, and material changes raise acknowledge-able alerts. 145 backend tests
+pass (ruff clean); frontend builds clean. Phase 4 remains off the board.
