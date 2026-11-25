@@ -78,6 +78,25 @@ class FindingStatusUpdate(BaseModel):
     status: str = Field(pattern="^(open|triaged|dismissed)$")
 
 
+# --- change events ---------------------------------------------------------------------
+
+class ChangeEventOut(BaseModel):
+    """One diff between an investigation's previous run and its latest run (SMPLSGHT-50)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    change_type: str
+    entity_type: str
+    entity_key: str
+    title: str
+    severity: str | None = None
+    detail: dict = Field(default_factory=dict)
+    run_at: datetime
+    acknowledged_at: datetime | None = None
+    created_at: datetime
+
+
 class ExposureScoreOut(BaseModel):
     """Rolled-up exposure score for an investigation (SMPLSGHT-48)."""
 

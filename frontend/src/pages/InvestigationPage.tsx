@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
-import type { Asset, DiscoveryPlan, Finding, Investigation } from "../api/types";
+import type { Asset, ChangeEvent, DiscoveryPlan, Finding, Investigation } from "../api/types";
 import { StatusBadge } from "../components/Layout";
 import { FindingsSection } from "../components/FindingsSection";
+import { ChangesSection } from "../components/ChangesSection";
 import { useAuth } from "../auth/AuthContext";
 
 const TERMINAL = ["success", "complete", "partial", "failed"];
@@ -23,9 +24,12 @@ export function InvestigationPage() {
   const [minConf, setMinConf] = useState(0);
 
   const [plan, setPlan] = useState<DiscoveryPlan | null>(null);
+  const [changes, setChanges] = useState<ChangeEvent[]>([]);
 
   function load() {
-    if (id) api.get<Investigation>(`/investigations/${id}`).then(setInv).catch(() => {});
+    if (!id) return;
+    api.get<Investigation>(`/investigations/${id}`).then(setInv).catch(() => {});
+    api.get<ChangeEvent[]>(`/investigations/${id}/changes`).then(setChanges).catch(() => {});
   }
   useEffect(load, [id]);
 
@@ -216,6 +220,8 @@ export function InvestigationPage() {
           </div>
         </>
       )}
+
+      <ChangesSection changes={changes} />
 
       <FindingsSection findings={findings} canWrite={canWrite} onChanged={load} />
 

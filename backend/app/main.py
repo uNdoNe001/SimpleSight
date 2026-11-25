@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from app.api import (
     audit,
     auth,
+    changes,
     findings,
     investigations,
     organizations,
@@ -39,6 +40,7 @@ app.include_router(users.router)
 app.include_router(organizations.router)
 app.include_router(investigations.router)
 app.include_router(findings.router)
+app.include_router(changes.router)
 app.include_router(reports.router)
 app.include_router(secrets.router)
 app.include_router(audit.router)

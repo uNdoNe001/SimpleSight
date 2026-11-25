@@ -107,6 +107,26 @@ export interface Investigation {
   exposure_score?: ExposureScore;
 }
 
+export type ChangeType =
+  | "asset_added"
+  | "asset_removed"
+  | "finding_appeared"
+  | "finding_resolved"
+  | "finding_severity_changed";
+
+export interface ChangeEvent {
+  id: string;
+  change_type: ChangeType;
+  entity_type: "asset" | "finding";
+  entity_key: string;
+  title: string;
+  severity: FindingSeverity | null;
+  detail: Record<string, unknown>;
+  run_at: string;
+  acknowledged_at: string | null;
+  created_at: string;
+}
+
 export interface ExposureScore {
   score: number;
   grade: string;

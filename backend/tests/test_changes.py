@@ -119,3 +119,33 @@ def test_first_run_is_baseline_second_run_records_changes(client, monkeypatch):
         assert len({e.run_at for e in events}) == 1
     finally:
         db.close()
+
+
+def test_changes_endpoint_lists_events_and_enforces_tenancy(client, monkeypatch):
+    monkeypatch.setattr(tasks, "SessionLocal", conftest.TestSession)
+
+    token = signup(client, "Acme", "admin@acme.io")
+    inv_id = _authorized_inv(client, token)
+
+    monkeypatch.setattr(pipeline, "default_collectors", lambda: _one_collector("a.example.com"))
+    tasks.run_investigation_task(inv_id)
+    # No change events after the baseline run.
+    r = client.get(f"/api/investigations/{inv_id}/changes", headers=auth_header(token))
+    assert r.status_code == 200 and r.json() == []
+
+    monkeypatch.setattr(pipeline, "default_collectors", lambda: _one_collector("b.example.com"))
+    tasks.run_investigation_task(inv_id)
+
+    r = client.get(f"/api/investigations/{inv_id}/changes", headers=auth_header(token))
+    assert r.status_code == 200
+    body = r.json()
+    assert {e["change_type"] for e in body} == {"asset_added", "asset_removed"}
+
+    # latest=true returns the same single run here.
+    r2 = client.get(f"/api/investigations/{inv_id}/changes?latest=true", headers=auth_header(token))
+    assert len(r2.json()) == len(body)
+
+    # Another tenant cannot see this investigation's changes.
+    other = signup(client, "Rival", "admin@rival.io")
+    r3 = client.get(f"/api/investigations/{inv_id}/changes", headers=auth_header(other))
+    assert r3.status_code == 404
