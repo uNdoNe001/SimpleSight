@@ -10,16 +10,13 @@ so run-due is the manual trigger a cron or worker tick would otherwise call.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db import get_db
 from app.deps import get_current_user, require_writer
-from app.models import Investigation, InvestigationStatus, Organization, User
-from app.queue import enqueue_investigation_run
+from app.models import Investigation, User
 from app.schemas import (
     DueInvestigationOut,
     InvestigationOut,
@@ -27,7 +24,7 @@ from app.schemas import (
     RunDueResponse,
 )
 from app.services.audit import record_audit
-from app.services.monitoring import due_investigations, next_due_at
+from app.services.monitoring import due_investigations, enqueue_due, next_due_at
 
 router = APIRouter(tags=["monitoring"])
 
@@ -86,23 +83,12 @@ def run_due(
     enqueuing a run destined to fail.
     """
     _require_enabled()
-    due = due_investigations(db, tenant_id=user.tenant_id)
-    enqueued: list[str] = []
-    for inv in due:
-        org = db.get(Organization, inv.organization_id)
-        if org is None or not org.primary_domain:
-            continue
-        inv.status = InvestigationStatus.RUNNING.value
-        inv.started_at = datetime.now(UTC)
-        inv.completed_at = None
-        enqueued.append(inv.id)
-    if enqueued:
+    result = enqueue_due(db, tenant_id=user.tenant_id)
+    if result.enqueued:
         record_audit(
             db, tenant_id=user.tenant_id, actor_user_id=user.id,
             action="monitoring.run_due", target=None,
-            detail={"enqueued": len(enqueued), "investigation_ids": enqueued},
+            detail={"enqueued": len(result.enqueued), "investigation_ids": result.enqueued},
         )
         db.commit()
-    for inv_id in enqueued:
-        enqueue_investigation_run(inv_id)
-    return RunDueResponse(enqueued=len(enqueued), investigation_ids=enqueued)
+    return RunDueResponse(enqueued=len(result.enqueued), investigation_ids=result.enqueued)
