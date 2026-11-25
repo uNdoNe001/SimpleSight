@@ -28,6 +28,10 @@ class Settings(BaseSettings):
 
     # Per-provider rate limiting (SMPLSGHT-20). Disable only for local experiments.
     rate_limit_enabled: bool = True
+    # Backend for the limiter (SMPLSGHT-60): "memory" (single worker) or "redis" (shared across
+    # workers). Redis uses an atomic Lua token-bucket under this key prefix.
+    rate_limit_backend: str = "memory"
+    rate_limit_redis_prefix: str = "simplesight:rl"
 
     # Dependent second-stage enrichment: subdomain-takeover detection (SMPLSGHT-45).
     # Runs CNAME lookups over discovered subdomains; disable to skip the second DNS pass.

@@ -11,7 +11,7 @@ from __future__ import annotations
 from app.core.config import settings
 from app.schemas import CollectorRunOut, RunInvestigationResponse
 from app.services.assets import normalize_and_dedup
-from app.services.ratelimit import NullRateLimiter, RateLimiter
+from app.services.ratelimit import build_rate_limiter
 from collectors.base import CollectionContext, Collector
 from collectors.registry import default_collectors, enrichment_collectors
 from collectors.runner import overall_outcome, run_collectors
@@ -34,7 +34,7 @@ def run_investigation(
     detection, SMPLSGHT-45) over the subdomains the first pass discovered, handing them in
     via `context.scope["subdomains"]`. It is skipped when there are no subdomains.
     """
-    limiter = rate_limiter or (RateLimiter() if settings.rate_limit_enabled else NullRateLimiter())
+    limiter = rate_limiter or build_rate_limiter()
     target = domain.strip().lower().rstrip(".")
     context = CollectionContext(target=target, config=config or {}, rate_limiter=limiter)
     runs = run_collectors(collectors or default_collectors(), context)
