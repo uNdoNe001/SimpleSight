@@ -1,5 +1,7 @@
 # SimpleSight
 
+[![CI](https://github.com/uNdoNe001/SimpleSight/actions/workflows/ci.yml/badge.svg)](https://github.com/uNdoNe001/SimpleSight/actions/workflows/ci.yml)
+
 **Open-Source Intelligence & Digital Footprint Intelligence Platform**
 _Part of SimpleSuite by Summit Cyber Group, LLC_
 
