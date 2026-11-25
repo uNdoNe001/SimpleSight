@@ -34,6 +34,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Finding, Investigation, Organization
+from app.services.narrative import TemplateNarrator, build_payload
 from app.services.scoring import ExposureScore, compute_exposure
 
 SEVERITY_ORDER = ["critical", "high", "medium", "low", "info"]
@@ -71,6 +72,7 @@ class ReportData:
     asset_counts: dict[str, int] = field(default_factory=dict)
     total_assets: int = 0
     exposure: ExposureScore | None = None
+    narrative: str | None = None
     generated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -87,6 +89,7 @@ def gather_report_data(db: Session, investigation: Investigation) -> ReportData:
                        else 99, -f.confidence, f.title),
     )
     counts = Counter(a.asset_type for a in investigation.assets)
+    exposure = compute_exposure(findings)
     return ReportData(
         organization_name=org.name if org else "(unknown organization)",
         primary_domain=org.primary_domain if org else None,
@@ -112,7 +115,16 @@ def gather_report_data(db: Session, investigation: Investigation) -> ReportData:
         ],
         asset_counts=dict(counts),
         total_assets=sum(counts.values()),
-        exposure=compute_exposure(findings),
+        exposure=exposure,
+        # Deterministic, template-only narrative so the PDF stays reproducible and offline; the
+        # optional model-backed narrator is reserved for the /narrative API (SMPLSGHT-58).
+        narrative=TemplateNarrator().narrate(
+            build_payload(
+                target=(org.primary_domain if org else None) or "",
+                findings=findings,
+                exposure=exposure,
+            )
+        ),
     )
 
 
@@ -234,6 +246,11 @@ def build_report_pdf(data: ReportData) -> bytes:
     ]))
     story.append(score_table)
     story.append(Spacer(1, 10))
+
+    # Grounded narrative (SMPLSGHT-58): prose built only from the derived findings/exposure.
+    if data.narrative:
+        story.append(Paragraph(escape(data.narrative), body))
+        story.append(Spacer(1, 8))
 
     story.append(Paragraph(_summary_narrative(active, sev_counts), body))
     story.append(Spacer(1, 8))

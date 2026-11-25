@@ -36,6 +36,14 @@ class Settings(BaseSettings):
     # Continuous monitoring (SMPLSGHT-52): feature gate for the /api/monitoring endpoints.
     monitoring_enabled: bool = True
 
+    # Grounded AI narrative (SMPLSGHT-58). The deterministic template narrator is always used
+    # unless a Claude API key is configured AND this is on; even then the model is instructed to
+    # summarize only the supplied findings — never to invent. Model id per the Claude 5 family.
+    narrative_ai_enabled: bool = True
+    narrative_model: str = "claude-haiku-5-5"
+    # Secret name under which the tenant's Claude API key is resolved (secrets manager / env).
+    narrative_api_key_secret: str = "anthropic_api_key"
+
     # Secrets-at-rest encryption (Fernet key: url-safe base64, 32 bytes).
     # This dev default is intentionally weak and must be overridden in every real
     # environment — rotating it makes existing stored secrets undecryptable.

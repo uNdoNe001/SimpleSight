@@ -150,6 +150,16 @@ class DeliveryTestResult(BaseModel):
     error: str | None = None
 
 
+# --- narrative -------------------------------------------------------------------------
+
+class NarrativeOut(BaseModel):
+    """A grounded executive narrative for an investigation (SMPLSGHT-58)."""
+
+    text: str
+    mode: str  # "template" | "claude"
+    model: str | None = None
+
+
 class ExposureScoreOut(BaseModel):
     """Rolled-up exposure score for an investigation (SMPLSGHT-48)."""
 
