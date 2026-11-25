@@ -16,6 +16,7 @@ from app.models import Asset, ChangeEvent, Investigation, InvestigationStatus, O
 from app.services.audit import record_audit
 from app.services.changes import diff_runs, snapshot_from_orm
 from app.services.findings import derive_findings, persist_findings
+from app.services.notifications import deliver_alerts
 from app.services.pipeline import run_investigation as run_pipeline
 from app.services.secrets import resolve_many
 from collectors.registry import required_secret_names
@@ -78,10 +79,11 @@ def run_and_persist(db: Session, investigation: Investigation, actor_user_id: st
     # Diff the fresh run against the prior snapshot and record change events (SMPLSGHT-50).
     run_at = datetime.now(UTC)
     change_count = 0
+    new_events: list = []
     if had_prior_run:
-        events = diff_runs(prev_snapshot, snapshot_from_orm(investigation))
-        change_count = len(events)
-        for ev in events:
+        new_events = diff_runs(prev_snapshot, snapshot_from_orm(investigation))
+        change_count = len(new_events)
+        for ev in new_events:
             db.add(
                 ChangeEvent(
                     tenant_id=investigation.tenant_id,
@@ -100,6 +102,10 @@ def run_and_persist(db: Session, investigation: Investigation, actor_user_id: st
     investigation.status = result.overall_outcome  # success | partial | failed
     investigation.completed_at = run_at
 
+    # Best-effort outbound delivery of material alerts to configured channels (SMPLSGHT-56).
+    # Never fails the run: deliver_alerts records per-channel outcomes and swallows errors.
+    delivered = deliver_alerts(db, investigation, target, new_events)
+
     record_audit(
         db,
         tenant_id=investigation.tenant_id,
@@ -112,6 +118,7 @@ def run_and_persist(db: Session, investigation: Investigation, actor_user_id: st
             "asset_count": result.asset_count,
             "finding_count": len(candidates),
             "change_count": change_count,
+            "alerts_delivered": delivered,
             "provider_usage": result.provider_usage,
             "collectors": [c.model_dump() for c in result.collectors],
         },

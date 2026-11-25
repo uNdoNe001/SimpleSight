@@ -12,6 +12,7 @@ from app.api import (
     findings,
     investigations,
     monitoring,
+    notifications,
     organizations,
     reports,
     secrets,
@@ -45,6 +46,7 @@ app.include_router(findings.router)
 app.include_router(changes.router)
 app.include_router(monitoring.router)
 app.include_router(alerts.router)
+app.include_router(notifications.router)
 app.include_router(reports.router)
 app.include_router(secrets.router)
 app.include_router(audit.router)

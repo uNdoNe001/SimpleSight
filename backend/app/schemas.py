@@ -112,6 +112,44 @@ class AlertSummaryOut(BaseModel):
     unacknowledged: int
 
 
+# --- notification channels -------------------------------------------------------------
+
+class ChannelCreate(BaseModel):
+    """Create an outbound notification channel (SMPLSGHT-56)."""
+
+    name: str = Field(min_length=1, max_length=100)
+    channel_type: str = Field(default="webhook", pattern="^webhook$")
+    target: str = Field(min_length=1, max_length=1024)
+    signing_secret: str | None = Field(default=None, min_length=8, max_length=256)
+    enabled: bool = True
+
+    @model_validator(mode="after")
+    def _target_is_http_url(self) -> ChannelCreate:
+        if not (self.target.startswith("http://") or self.target.startswith("https://")):
+            raise ValueError("target must be an http(s) URL")
+        return self
+
+
+class ChannelOut(BaseModel):
+    """A notification channel — the signing secret is never returned, only its presence."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    name: str
+    channel_type: str
+    target: str
+    enabled: bool
+    created_at: datetime
+    has_secret: bool = False
+
+
+class DeliveryTestResult(BaseModel):
+    ok: bool
+    status: int | None = None
+    error: str | None = None
+
+
 class ExposureScoreOut(BaseModel):
     """Rolled-up exposure score for an investigation (SMPLSGHT-48)."""
 

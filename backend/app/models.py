@@ -237,6 +237,26 @@ class ChangeEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
+class NotificationChannel(Base):
+    """An outbound destination for alerts (Phase 4 · SMPLSGHT-56).
+
+    One per tenant row; `channel_type` is "webhook" for now. The optional `signing_secret`
+    (HMAC-SHA256 over the payload) is write-only — set and used for signing, never returned by
+    the API and never logged. Delivery is best-effort: a failing channel is audited, not fatal.
+    """
+
+    __tablename__ = "notification_channels"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(String(36), ForeignKey("tenants.id"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    channel_type: Mapped[str] = mapped_column(String(20), default="webhook")
+    target: Mapped[str] = mapped_column(String(1024))  # webhook URL
+    signing_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class TenantSecret(Base):
     """A provider API key (or similar secret) scoped to a tenant (SMPLSGHT-11).
 
