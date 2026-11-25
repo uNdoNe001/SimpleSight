@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
-import type { Asset, ChangeEvent, DiscoveryPlan, Finding, Investigation } from "../api/types";
+import type {
+  AlertsResponse,
+  Asset,
+  ChangeEvent,
+  DiscoveryPlan,
+  Finding,
+  Investigation,
+} from "../api/types";
 import { StatusBadge } from "../components/Layout";
 import { FindingsSection } from "../components/FindingsSection";
 import { ChangesSection } from "../components/ChangesSection";
+import { AlertsBanner } from "../components/AlertsBanner";
 import { useAuth } from "../auth/AuthContext";
 
 const TERMINAL = ["success", "complete", "partial", "failed"];
@@ -25,11 +33,13 @@ export function InvestigationPage() {
 
   const [plan, setPlan] = useState<DiscoveryPlan | null>(null);
   const [changes, setChanges] = useState<ChangeEvent[]>([]);
+  const [alerts, setAlerts] = useState<AlertsResponse | null>(null);
 
   function load() {
     if (!id) return;
     api.get<Investigation>(`/investigations/${id}`).then(setInv).catch(() => {});
     api.get<ChangeEvent[]>(`/investigations/${id}/changes`).then(setChanges).catch(() => {});
+    api.get<AlertsResponse>(`/investigations/${id}/alerts`).then(setAlerts).catch(() => {});
   }
   useEffect(load, [id]);
 
@@ -127,6 +137,10 @@ export function InvestigationPage() {
         Investigation <span className="mono" style={{ fontSize: "1rem" }}>{inv.id.slice(0, 8)}</span>{" "}
         <StatusBadge status={inv.status} />
       </h1>
+
+      {alerts && (
+        <AlertsBanner alerts={alerts} canWrite={canWrite} onChanged={load} />
+      )}
 
       <div className="card">
         <div className="row">

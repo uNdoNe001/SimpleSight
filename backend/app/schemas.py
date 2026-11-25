@@ -97,6 +97,21 @@ class ChangeEventOut(BaseModel):
     created_at: datetime
 
 
+# --- alerts ----------------------------------------------------------------------------
+
+class AlertsOut(BaseModel):
+    """Material change events for an investigation and the unacknowledged count (SMPLSGHT-53)."""
+
+    unacknowledged: int
+    alerts: list[ChangeEventOut] = Field(default_factory=list)
+
+
+class AlertSummaryOut(BaseModel):
+    """Tenant-wide unacknowledged alert count, for a nav badge (SMPLSGHT-53)."""
+
+    unacknowledged: int
+
+
 class ExposureScoreOut(BaseModel):
     """Rolled-up exposure score for an investigation (SMPLSGHT-48)."""
 

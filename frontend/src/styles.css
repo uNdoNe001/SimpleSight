@@ -172,3 +172,19 @@ input, select, textarea {
   display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
 }
 .monitoring-card select { padding: 0.3rem 0.5rem; font-size: 0.85rem; }
+
+/* Alerts banner (SMPLSGHT-53) */
+.alerts-banner {
+  border-left: 4px solid #dc2626;
+  background: color-mix(in srgb, #dc2626 6%, var(--card, #fff));
+}
+.alerts-banner-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.alert-bell { color: #dc2626; font-size: 1.1rem; }
+.alerts-list { list-style: none; margin: 0.6rem 0 0; padding: 0; }
+.alert-item {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  padding: 0.3rem 0; font-size: 0.88rem;
+}
+.alert-item.acked { opacity: 0.55; }
+.alert-desc { font-weight: 600; }
+.alert-ack { padding: 0.2rem 0.6rem; font-size: 0.78rem; margin-left: auto; }

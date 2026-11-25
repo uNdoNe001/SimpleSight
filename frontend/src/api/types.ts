@@ -111,6 +111,11 @@ export interface Investigation {
 
 export type MonitoringInterval = "hourly" | "daily" | "weekly";
 
+export interface AlertsResponse {
+  unacknowledged: number;
+  alerts: ChangeEvent[];
+}
+
 export type ChangeType =
   | "asset_added"
   | "asset_removed"
