@@ -205,3 +205,23 @@ investigations; reports carry a grounded narrative (optionally model-written); a
 provider keys and the Claude key from the UI; the rate limiter can share state across workers.
 166 backend tests pass (ruff clean); frontend builds clean. Backlog now spans 60 issues across
 4 phases, all Done.
+
+## Phase 5 — Portfolio Dashboard & Operational Health
+
+Epic **SMPLSGHT-61**. A tenant-wide rollup over everything built in Phases 1–4 — all
+deterministic aggregation over stored runs/assets/findings/change-events, nothing invented, every
+query tenant-scoped.
+
+| Story | Status | Notes |
+|---|---|---|
+| SMPLSGHT-62 Portfolio summary | ✅ done | `app/services/portfolio.py::summarize` + `GET /api/portfolio/summary` — org counts, investigations by status, exposure-grade distribution (via compute_exposure), most-exposed investigation, tenant-wide open alerts, monitoring coverage |
+| SMPLSGHT-63 Activity feed | ✅ done | `recent_activity()` + `GET /api/portfolio/activity` — recent change events across all investigations, newest run first, org + materiality annotated; `?limit`/`?material` filters |
+| SMPLSGHT-64 Monitoring health | ✅ done | `monitoring_health()` + `GET /api/portfolio/monitoring-health` — fresh/due/overdue/pending per monitored investigation from the monitoring helpers, attention-first |
+| SMPLSGHT-65 Exposure history + trend | ✅ done | `ExposureSnapshot` written per completed run in `run_and_persist` (migration `d4e5f6a7b8c9`); `GET /investigations/{id}/exposure-history`; frontend `ExposureTrend` sparkline |
+| SMPLSGHT-66 Dashboard frontend | ✅ done | DashboardPage rollup — tiles, exposure-grade bars + most-exposed, monitoring-health table, recent-activity feed |
+
+**Phase 5 complete (2026-11-25):** epic SMPLSGHT-61 + all 5 stories Done (0 open on board).
+The platform now opens on a tenant dashboard that rolls up exposure, alerts, monitoring health,
+and recent change activity across every investigation, and each investigation carries an exposure
+trend over its runs. 174 backend tests pass (ruff clean over app/collectors/tests/workers);
+frontend builds clean (tsc strict + vite). Backlog now spans 66 issues across 5 phases, all Done.
