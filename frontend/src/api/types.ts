@@ -151,3 +151,53 @@ export interface ExposureScore {
   scored_findings: number;
   rationale: string;
 }
+
+// --- portfolio dashboard (Phase 5) ---
+
+export interface ExposureLeader {
+  investigation_id: string;
+  organization_id: string;
+  score: number;
+  grade: string;
+  label: string;
+}
+
+export interface PortfolioSummary {
+  organizations: { total: number; archived: number };
+  investigations_total: number;
+  investigations_by_status: Record<string, number>;
+  assessed_investigations: number;
+  exposure_distribution: Record<string, number>;
+  highest_exposure: ExposureLeader | null;
+  open_alerts: number;
+  monitoring_enabled: number;
+  monitoring_by_interval: Record<string, number>;
+}
+
+export interface ActivityItem extends ChangeEvent {
+  investigation_id: string;
+  organization_id: string;
+  organization_name: string;
+  is_material: boolean;
+}
+
+export type MonitorState = "overdue" | "due" | "pending" | "fresh";
+
+export interface MonitoringHealthItem {
+  investigation_id: string;
+  organization_id: string;
+  organization_name: string;
+  interval: string | null;
+  status: string;
+  last_run: string | null;
+  next_due_at: string | null;
+  state: MonitorState;
+}
+
+export interface ExposureHistoryPoint {
+  score: number;
+  grade: string;
+  label: string;
+  scored_findings: number;
+  run_at: string;
+}

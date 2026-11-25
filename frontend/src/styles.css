@@ -192,4 +192,47 @@ input, select, textarea {
 /* Secrets admin (SMPLSGHT-59) */
 .secret-row { display: flex; align-items: center; gap: 0.4rem; }
 .secret-row input { flex: 1; min-width: 120px; }
+
+/* Portfolio dashboard (Phase 5 · SMPLSGHT-62/63/64) */
+.grade-bars { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.9rem; }
+.grade-bar { display: flex; align-items: center; gap: 0.6rem; }
+.grade-pill {
+  width: 1.6rem; height: 1.6rem; border-radius: 6px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: #fff; font-size: 0.85rem;
+}
+.grade-track {
+  flex: 1; height: 0.6rem; background: var(--border, #e2e8f0);
+  border-radius: 999px; overflow: hidden;
+}
+.grade-fill { height: 100%; border-radius: 999px; }
+.grade-count { width: 1.5rem; text-align: right; font-variant-numeric: tabular-nums; }
+.grade-pill.grade-A, .grade-fill.grade-A { background: #047857; }
+.grade-pill.grade-B, .grade-fill.grade-B { background: #a16207; }
+.grade-pill.grade-C, .grade-fill.grade-C { background: #d97706; }
+.grade-pill.grade-D, .grade-fill.grade-D { background: #dc2626; }
+.grade-pill.grade-F, .grade-fill.grade-F { background: #991b1b; }
+
+.badge.monitor-overdue { background: #fee2e2; color: #991b1b; }
+.badge.monitor-due { background: #fef3c7; color: var(--warn); }
+.badge.monitor-pending { background: #e0e7ff; color: #4338ca; }
+.badge.monitor-fresh { background: #dcfce7; color: var(--ok); }
+
+.activity-feed { list-style: none; margin: 0; padding: 0; }
+.activity-feed li {
+  display: grid; grid-template-columns: 5.5rem 1fr auto; gap: 0.6rem;
+  align-items: baseline; padding: 0.45rem 0; border-top: 1px solid var(--border, #e2e8f0);
+  font-size: 0.88rem;
+}
+.activity-feed li:first-child { border-top: none; }
+.activity-feed li.material { background: color-mix(in srgb, #dc2626 4%, transparent); }
+.activity-what { word-break: break-word; }
+.activity-what .badge { margin-right: 0.35rem; }
+.activity-where { white-space: nowrap; }
+
+/* Exposure trend sparkline (SMPLSGHT-65) */
+.exposure-trend { margin-top: 0.75rem; }
+.exposure-trend svg { display: block; width: 100%; height: 48px; }
+.exposure-trend .spark-line { fill: none; stroke: var(--accent, #2563eb); stroke-width: 2; }
+.exposure-trend .spark-dot { fill: var(--accent, #2563eb); }
 .secret-row .btn { flex: 0 0 auto; padding: 0.35rem 0.7rem; font-size: 0.82rem; }

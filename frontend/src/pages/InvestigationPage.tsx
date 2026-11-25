@@ -13,6 +13,7 @@ import { StatusBadge } from "../components/Layout";
 import { FindingsSection } from "../components/FindingsSection";
 import { ChangesSection } from "../components/ChangesSection";
 import { AlertsBanner } from "../components/AlertsBanner";
+import { ExposureTrend } from "../components/ExposureTrend";
 import { useAuth } from "../auth/AuthContext";
 
 const TERMINAL = ["success", "complete", "partial", "failed"];
@@ -281,6 +282,7 @@ export function InvestigationPage() {
               overall security.
             </p>
           </div>
+          {id && <ExposureTrend investigationId={id} />}
         </>
       )}
 
