@@ -10,6 +10,7 @@ from app.api import (
     changes,
     findings,
     investigations,
+    monitoring,
     organizations,
     reports,
     secrets,
@@ -41,6 +42,7 @@ app.include_router(organizations.router)
 app.include_router(investigations.router)
 app.include_router(findings.router)
 app.include_router(changes.router)
+app.include_router(monitoring.router)
 app.include_router(reports.router)
 app.include_router(secrets.router)
 app.include_router(audit.router)

@@ -111,6 +111,11 @@ class Investigation(Base):
     authorization_scope: Mapped[str | None] = mapped_column(Text, nullable=True)
     authorized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # Continuous monitoring (SMPLSGHT-52): when enabled, the investigation is eligible for
+    # periodic re-collection on `monitoring_interval` (a key into monitoring.INTERVALS).
+    monitoring_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    monitoring_interval: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
     created_by: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     # Runs CNAME lookups over discovered subdomains; disable to skip the second DNS pass.
     takeover_detection_enabled: bool = True
 
+    # Continuous monitoring (SMPLSGHT-52): feature gate for the /api/monitoring endpoints.
+    monitoring_enabled: bool = True
+
     # Secrets-at-rest encryption (Fernet key: url-safe base64, 32 bytes).
     # This dev default is intentionally weak and must be overridden in every real
     # environment — rotating it makes existing stored secrets undecryptable.

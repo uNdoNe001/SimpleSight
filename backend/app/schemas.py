@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field, model_validator
 
 from app.services.scoring import compute_exposure
 
@@ -256,6 +256,39 @@ class InvestigationOut(BaseModel):
     created_at: datetime
     started_at: datetime | None
     completed_at: datetime | None
+    monitoring_enabled: bool = False
+    monitoring_interval: str | None = None
+
+
+class MonitoringUpdate(BaseModel):
+    """Enable/disable periodic re-collection and set its cadence (SMPLSGHT-52)."""
+
+    enabled: bool
+    interval: str | None = Field(default=None, pattern="^(hourly|daily|weekly)$")
+
+    @model_validator(mode="after")
+    def _interval_required_when_enabled(self) -> MonitoringUpdate:
+        if self.enabled and self.interval is None:
+            raise ValueError("interval is required when monitoring is enabled")
+        return self
+
+
+class DueInvestigationOut(BaseModel):
+    """A monitored investigation that is due for re-collection (SMPLSGHT-52)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    organization_id: str
+    status: str
+    monitoring_interval: str | None
+    completed_at: datetime | None
+    next_due_at: datetime | None = None
+
+
+class RunDueResponse(BaseModel):
+    enqueued: int
+    investigation_ids: list[str] = Field(default_factory=list)
 
 
 class InvestigationDetailOut(InvestigationOut):

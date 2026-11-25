@@ -68,6 +68,23 @@ export function InvestigationPage() {
     }
   }
 
+  const [monBusy, setMonBusy] = useState(false);
+  async function setMonitoring(enabled: boolean, interval: string) {
+    setError(null);
+    setMonBusy(true);
+    try {
+      await api.patch(`/investigations/${id}/monitoring`, {
+        enabled,
+        interval: enabled ? interval : null,
+      });
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to update monitoring");
+    } finally {
+      setMonBusy(false);
+    }
+  }
+
   const [downloading, setDownloading] = useState(false);
   async function downloadReport() {
     setError(null);
@@ -162,6 +179,38 @@ export function InvestigationPage() {
         )}
         {inv.status === "running" && <p className="muted" style={{ marginTop: "1rem" }}>Collection running… this page updates automatically.</p>}
       </div>
+
+      {canWrite && (
+        <div className="card monitoring-card">
+          <label style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <input
+              type="checkbox"
+              style={{ width: "auto" }}
+              checked={inv.monitoring_enabled}
+              disabled={monBusy}
+              onChange={(e) =>
+                setMonitoring(e.target.checked, inv.monitoring_interval ?? "daily")
+              }
+            />
+            <strong>Continuous monitoring</strong>
+          </label>
+          <span className="muted" style={{ fontSize: "0.85rem" }}>
+            Re-collect periodically and record what changed between runs.
+          </span>
+          {inv.monitoring_enabled && (
+            <select
+              value={inv.monitoring_interval ?? "daily"}
+              disabled={monBusy}
+              style={{ width: "auto" }}
+              onChange={(e) => setMonitoring(true, e.target.value)}
+            >
+              <option value="hourly">Hourly</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          )}
+        </div>
+      )}
 
       {plan && (
         <>

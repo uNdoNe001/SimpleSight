@@ -102,10 +102,14 @@ export interface Investigation {
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
+  monitoring_enabled: boolean;
+  monitoring_interval: string | null;
   assets?: Asset[];
   findings?: Finding[];
   exposure_score?: ExposureScore;
 }
+
+export type MonitoringInterval = "hourly" | "daily" | "weekly";
 
 export type ChangeType =
   | "asset_added"
