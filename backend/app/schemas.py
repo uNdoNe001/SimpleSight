@@ -173,6 +173,81 @@ class ExposureScoreOut(BaseModel):
     rationale: str
 
 
+# --- portfolio dashboard (Phase 5) -----------------------------------------------------
+
+class PortfolioOrgCounts(BaseModel):
+    total: int
+    archived: int
+
+
+class ExposureLeaderOut(BaseModel):
+    """The single most-exposed investigation in the tenant (SMPLSGHT-62)."""
+
+    investigation_id: str
+    organization_id: str
+    score: int = Field(ge=0, le=100)
+    grade: str
+    label: str
+
+
+class PortfolioSummaryOut(BaseModel):
+    """Tenant-wide rollup for the dashboard (SMPLSGHT-62)."""
+
+    organizations: PortfolioOrgCounts
+    investigations_total: int
+    investigations_by_status: dict[str, int] = Field(default_factory=dict)
+    assessed_investigations: int
+    exposure_distribution: dict[str, int] = Field(default_factory=dict)
+    highest_exposure: ExposureLeaderOut | None = None
+    open_alerts: int
+    monitoring_enabled: int
+    monitoring_by_interval: dict[str, int] = Field(default_factory=dict)
+
+
+class ActivityItemOut(BaseModel):
+    """A change event in the tenant-wide activity feed, with its origin (SMPLSGHT-63)."""
+
+    id: str
+    investigation_id: str
+    organization_id: str
+    organization_name: str
+    change_type: str
+    entity_type: str
+    entity_key: str
+    title: str
+    severity: str | None = None
+    detail: dict = Field(default_factory=dict)
+    is_material: bool
+    run_at: datetime
+    acknowledged_at: datetime | None = None
+    created_at: datetime
+
+
+class MonitoringHealthItemOut(BaseModel):
+    """Freshness of one monitored investigation (SMPLSGHT-64)."""
+
+    investigation_id: str
+    organization_id: str
+    organization_name: str
+    interval: str | None = None
+    status: str
+    last_run: datetime | None = None
+    next_due_at: datetime | None = None
+    state: str  # overdue | due | pending | fresh
+
+
+class ExposureHistoryPointOut(BaseModel):
+    """One point on an investigation's exposure trend (SMPLSGHT-65)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    score: int = Field(ge=0, le=100)
+    grade: str
+    label: str
+    scored_findings: int
+    run_at: datetime
+
+
 # --- audit log -------------------------------------------------------------------------
 
 class AuditLogOut(BaseModel):

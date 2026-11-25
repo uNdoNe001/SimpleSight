@@ -10,7 +10,16 @@ import uuid
 from datetime import UTC, datetime
 from enum import Enum
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -234,6 +243,33 @@ class ChangeEvent(Base):
     acknowledged_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class ExposureSnapshot(Base):
+    """A point-in-time exposure score for an investigation run (Phase 5 · SMPLSGHT-65).
+
+    One row is written per completed collection run, capturing the deterministically computed
+    exposure score/grade (app/services/scoring.compute_exposure) at that run's `run_at`. The
+    series forms the investigation's exposure trend — nothing is invented; each point is a
+    snapshot of the same score shown live, so history and current view always agree.
+    """
+
+    __tablename__ = "exposure_snapshots"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(String(36), ForeignKey("tenants.id"), index=True)
+    investigation_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("investigations.id"), index=True
+    )
+    organization_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("organizations.id"), index=True
+    )
+    score: Mapped[int] = mapped_column(Integer, default=0)
+    grade: Mapped[str] = mapped_column(String(2), default="A")
+    label: Mapped[str] = mapped_column(String(20), default="Minimal")
+    scored_findings: Mapped[int] = mapped_column(Integer, default=0)
+    run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, default=_now)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 

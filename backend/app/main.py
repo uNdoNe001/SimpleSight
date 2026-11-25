@@ -9,12 +9,14 @@ from app.api import (
     audit,
     auth,
     changes,
+    exposure,
     findings,
     investigations,
     monitoring,
     narrative,
     notifications,
     organizations,
+    portfolio,
     reports,
     secrets,
     users,
@@ -45,8 +47,10 @@ app.include_router(organizations.router)
 app.include_router(investigations.router)
 app.include_router(findings.router)
 app.include_router(changes.router)
+app.include_router(exposure.router)
 app.include_router(monitoring.router)
 app.include_router(alerts.router)
+app.include_router(portfolio.router)
 app.include_router(notifications.router)
 app.include_router(narrative.router)
 app.include_router(reports.router)

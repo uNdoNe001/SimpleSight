@@ -12,12 +12,20 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from app.models import Asset, ChangeEvent, Investigation, InvestigationStatus, Organization
+from app.models import (
+    Asset,
+    ChangeEvent,
+    ExposureSnapshot,
+    Investigation,
+    InvestigationStatus,
+    Organization,
+)
 from app.services.audit import record_audit
 from app.services.changes import diff_runs, snapshot_from_orm
 from app.services.findings import derive_findings, persist_findings
 from app.services.notifications import deliver_alerts
 from app.services.pipeline import run_investigation as run_pipeline
+from app.services.scoring import compute_exposure
 from app.services.secrets import resolve_many
 from collectors.registry import required_secret_names
 
@@ -101,6 +109,23 @@ def run_and_persist(db: Session, investigation: Investigation, actor_user_id: st
 
     investigation.status = result.overall_outcome  # success | partial | failed
     investigation.completed_at = run_at
+
+    # Snapshot the exposure score for the trend history (SMPLSGHT-65). Written every run,
+    # including the baseline, so the series starts at the first assessment. Deterministic:
+    # the same compute_exposure() that drives the live score and the report.
+    exposure = compute_exposure(investigation.findings)
+    db.add(
+        ExposureSnapshot(
+            tenant_id=investigation.tenant_id,
+            investigation_id=investigation.id,
+            organization_id=investigation.organization_id,
+            score=exposure.score,
+            grade=exposure.grade,
+            label=exposure.label,
+            scored_findings=exposure.scored_findings,
+            run_at=run_at,
+        )
+    )
 
     # Best-effort outbound delivery of material alerts to configured channels (SMPLSGHT-56).
     # Never fails the run: deliver_alerts records per-channel outcomes and swallows errors.
