@@ -10,6 +10,7 @@ export function Layout() {
         <nav>
           <NavLink to="/" end>Dashboard</NavLink>
           <NavLink to="/organizations">Organizations</NavLink>
+          {user?.role === "admin" && <NavLink to="/secrets">Provider keys</NavLink>}
           {user?.role === "admin" && <NavLink to="/audit">Audit</NavLink>}
         </nav>
         <span className="spacer" />

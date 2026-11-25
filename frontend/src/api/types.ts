@@ -61,6 +61,13 @@ export interface Finding {
   updated_at: string;
 }
 
+export interface SecretInfo {
+  name: string;
+  source: "tenant" | "env" | "unset" | string;
+  configured: boolean;
+  updated_at: string | null;
+}
+
 export interface AuditEntry {
   id: string;
   actor_user_id: string | null;

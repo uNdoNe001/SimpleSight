@@ -14,6 +14,7 @@ import re
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.db import get_db
 from app.deps import require_role
 from app.models import Role, User
@@ -21,6 +22,14 @@ from app.schemas import SecretInfoOut, SecretSetRequest
 from app.services import secrets as secrets_svc
 from app.services.audit import record_audit
 from collectors.registry import required_secret_names
+
+
+def _known_names() -> list[str]:
+    """Provider keys the collectors need, plus the optional Claude narrative key (SMPLSGHT-58)."""
+    names = list(required_secret_names())
+    if settings.narrative_api_key_secret not in names:
+        names.append(settings.narrative_api_key_secret)
+    return names
 
 router = APIRouter(prefix="/api/secrets", tags=["secrets"])
 
@@ -40,7 +49,7 @@ def list_secrets(
     user: User = Depends(require_role(Role.ADMIN)),
     db: Session = Depends(get_db),
 ) -> list[SecretInfoOut]:
-    infos = secrets_svc.list_secrets(db, user.tenant_id, required_secret_names())
+    infos = secrets_svc.list_secrets(db, user.tenant_id, _known_names())
     return [SecretInfoOut(**info.__dict__) for info in infos]
 
 

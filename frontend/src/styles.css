@@ -188,3 +188,8 @@ input, select, textarea {
 .alert-item.acked { opacity: 0.55; }
 .alert-desc { font-weight: 600; }
 .alert-ack { padding: 0.2rem 0.6rem; font-size: 0.78rem; margin-left: auto; }
+
+/* Secrets admin (SMPLSGHT-59) */
+.secret-row { display: flex; align-items: center; gap: 0.4rem; }
+.secret-row input { flex: 1; min-width: 120px; }
+.secret-row .btn { flex: 0 0 auto; padding: 0.35rem 0.7rem; font-size: 0.82rem; }

@@ -94,6 +94,14 @@ def test_secret_api_set_list_delete_admin_only(client):
                         headers=auth_header(admin)).status_code == 404
 
 
+def test_secret_listing_includes_narrative_key(client):
+    # The optional Claude narrative key (SMPLSGHT-58) is manageable via the same admin UI.
+    admin = signup(client, "Acme", "admin@acme.io")
+    listing = client.get("/api/secrets", headers=auth_header(admin)).json()
+    names = {e["name"] for e in listing}
+    assert "anthropic_api_key" in names
+
+
 def test_secret_api_rejects_non_admin(client):
     admin = signup(client, "Acme", "admin@acme.io")
     client.post("/api/users", headers=auth_header(admin),
